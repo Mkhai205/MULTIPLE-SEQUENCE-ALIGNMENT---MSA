@@ -3,6 +3,11 @@
 
 #include <stdexcept>
 #include <algorithm>
+#include <vector>
+
+#if defined(_OPENMP)
+#include <omp.h>
+#endif
 
 namespace msa::tree {
 
@@ -37,17 +42,54 @@ DistanceMatrix DistanceMatrix::compute(
     const std::vector<core::Sequence>& sequences,
     const core::ScoreModel& model,
     const core::Blosum62& matrix,
-    bool /*parallel*/
+    bool parallel
 ) {
     size_t n = sequences.size();
     DistanceMatrix dist(n);
 
     if (n == 0) return dist;
 
+    std::vector<int> self_scores(n, 0);
+
+#if defined(_OPENMP)
+    if (parallel) {
+        // Parallel self-alignment scores S(i, i)
+        #pragma omp parallel for schedule(dynamic, 1)
+        for (int i = 0; i < static_cast<int>(n); ++i) {
+            align::NeedlemanWunsch aligner(model, matrix);
+            self_scores[static_cast<size_t>(i)] = aligner.align(sequences[static_cast<size_t>(i)], sequences[static_cast<size_t>(i)]).score;
+            dist.set(static_cast<size_t>(i), static_cast<size_t>(i), 0.0);
+        }
+
+        // Generate pairwise indices
+        struct PairIdx { size_t i; size_t j; };
+        std::vector<PairIdx> pairs;
+        pairs.reserve(n * (n - 1) / 2);
+        for (size_t i = 0; i < n; ++i) {
+            for (size_t j = i + 1; j < n; ++j) {
+                pairs.push_back({i, j});
+            }
+        }
+
+        int total_pairs = static_cast<int>(pairs.size());
+        #pragma omp parallel for schedule(dynamic, 1)
+        for (int p = 0; p < total_pairs; ++p) {
+            size_t i = pairs[static_cast<size_t>(p)].i;
+            size_t j = pairs[static_cast<size_t>(p)].j;
+            align::NeedlemanWunsch aligner(model, matrix);
+            auto res = aligner.align(sequences[i], sequences[j]);
+            double d = computeNormalizedDistance(res.score, self_scores[i], self_scores[j]);
+            dist.set(i, j, d);
+        }
+
+        return dist;
+    }
+#endif
+
+    // Sequential fallback
     align::NeedlemanWunsch aligner(model, matrix);
 
     // 1. Calculate self-alignment scores S(i, i)
-    std::vector<int> self_scores(n);
     for (size_t i = 0; i < n; ++i) {
         self_scores[i] = aligner.align(sequences[i], sequences[i]).score;
         dist.set(i, i, 0.0);

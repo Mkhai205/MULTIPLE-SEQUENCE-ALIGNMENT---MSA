@@ -445,8 +445,35 @@ AlignmentResult HirschbergAligner::align(
         return static_cast<int>(std::round(core::Profile::scoreColumns(p1, i, p2, j, matrix)));
     };
 
-    std::string c1 = p1.consensusSequence();
-    std::string c2 = p2.consensusSequence();
+    std::string c1(m, 'X');
+    for (size_t c = 0; c < m; ++c) {
+        int best_aa = 22;
+        double max_freq = -1.0;
+        for (size_t a = 0; a < core::Profile::ALPHABET_SIZE; ++a) {
+            if (p1.columnFrequencies(c)[a] > max_freq) {
+                max_freq = p1.columnFrequencies(c)[a];
+                best_aa = static_cast<int>(a);
+            }
+        }
+        if (max_freq > 0.0) {
+            c1[c] = core::Blosum62::indexToChar(best_aa);
+        }
+    }
+
+    std::string c2(n, 'X');
+    for (size_t c = 0; c < n; ++c) {
+        int best_aa = 22;
+        double max_freq = -1.0;
+        for (size_t a = 0; a < core::Profile::ALPHABET_SIZE; ++a) {
+            if (p2.columnFrequencies(c)[a] > max_freq) {
+                max_freq = p2.columnFrequencies(c)[a];
+                best_aa = static_cast<int>(a);
+            }
+        }
+        if (max_freq > 0.0) {
+            c2[c] = core::Blosum62::indexToChar(best_aa);
+        }
+    }
 
     MyersMillerKernel kernel(score_fn, gap_open, gap_extend, c1, c2);
     auto [aligned1, aligned2] = kernel.align(0, m, 0, n, false, false);
