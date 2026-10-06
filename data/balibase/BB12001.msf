@@ -1,0 +1,17 @@
+ PileUp
+
+   MSF:  65  Type: P    Check:  9876   ..
+
+ Name: 1ivy_A        Len:    65  Check:  1111  Weight:  1.00
+ Name: 1ymy_         Len:    65  Check:  2222  Weight:  1.00
+ Name: 1ac5_         Len:    65  Check:  3333  Weight:  1.00
+
+//
+
+1ivy_A     apdqdeiqrl pglakqpsfr qysgylkssg skhlhywfve sqkdpenspv
+1ymy_      --tqdeiqrl pglakqpsfr qysgylkssg skhlhywfve sqkdpenspv
+1ac5_      ---qdeiqrl pglakqpsfr qysgylkssg skhlhywfve sqkdpenspv
+
+1ivy_A     vlflqkgtep fpayk
+1ymy_      vlflqkgtep fpayk
+1ac5_      vlflqkgtep fpayk

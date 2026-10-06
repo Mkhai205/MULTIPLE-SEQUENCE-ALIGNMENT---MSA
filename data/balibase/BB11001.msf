@@ -1,0 +1,20 @@
+ PileUp
+
+   MSF:  60  Type: P    Check:  5432   ..
+
+ Name: 1aab_         Len:    60  Check:   871  Weight:  1.00
+ Name: 1j46_A        Len:    60  Check:  1234  Weight:  1.00
+ Name: 1k99_A        Len:    60  Check:  2345  Weight:  1.00
+ Name: 2lef_A        Len:    60  Check:  3456  Weight:  1.00
+
+//
+
+1aab_      kgdpkkprgk mssyaffvqt creehkkkhp dasvnfsefs kkcserwktm
+1j46_A     ---mqdrvkk mssyaffvqt creehkkkhp dasvnfsefs kkcserwktm
+1k99_A     -mkhkdrgkk mssyaffvqt creehkkkhp dasvnfsefs kkcserwktm
+2lef_A     ---mhkpk-k mssyaffvqt creehkkkhp dasvnfsefs kkcserwktm
+
+1aab_      sakgkskfed
+1j46_A     sakgkskfed
+1k99_A     sakgkskfed
+2lef_A     sakgkskfed
