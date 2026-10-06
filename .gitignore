@@ -1,0 +1,10 @@
+build/
+build_e2e/
+.vs/
+out/
+*.user
+*.exe
+*.obj
+*.lib
+*.pdb
+*.ilk
