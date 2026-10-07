@@ -4,14 +4,13 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ALIGN_VERTICAL
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
-import datetime
+import re
 
 def create_report():
     doc = docx.Document()
 
     # Page setup - Margins (Top/Bottom 2.0cm, Left 2.5cm, Right 2.0cm)
-    sections = doc.sections
-    for section in sections:
+    for section in doc.sections:
         section.top_margin = Inches(0.8)
         section.bottom_margin = Inches(0.8)
         section.left_margin = Inches(1.0)
@@ -22,7 +21,7 @@ def create_report():
     font_normal = style_normal.font
     font_normal.name = 'Times New Roman'
     font_normal.size = Pt(12)
-    font_normal.color.rgb = RGBColor(0, 0, 0)
+    font_normal.color.rgb = RGBColor(15, 23, 42) # Slate 900
     style_normal.paragraph_format.line_spacing = 1.25
     style_normal.paragraph_format.space_after = Pt(4)
 
@@ -31,12 +30,12 @@ def create_report():
         shd = parse_xml(f'<w:shd {nsdecls("w")} w:fill="{fill_hex}"/>')
         tcPr.append(shd)
 
-    def set_cell_margins(cell, top=100, bottom=100, left=150, right=150):
+    def set_cell_margins(cell, top=120, bottom=120, left=160, right=160):
         tcPr = cell._tc.get_or_add_tcPr()
         tcMar = parse_xml(f'<w:tcMar {nsdecls("w")}><w:top w:w="{top}" w:type="dxa"/><w:bottom w:w="{bottom}" w:type="dxa"/><w:left w:w="{left}" w:type="dxa"/><w:right w:w="{right}" w:type="dxa"/></w:tcMar>')
         tcPr.append(tcMar)
 
-    def set_table_borders(table, color="CCCCCC", sz="4", val="single"):
+    def set_table_borders(table, color="D1D5DB", sz="4", val="single"):
         tblPr = table._tbl.tblPr
         borders = parse_xml(f'<w:tblBorders {nsdecls("w")}>'
                             f'<w:top w:val="{val}" w:sz="{sz}" w:space="0" w:color="{color}"/>'
@@ -48,90 +47,191 @@ def create_report():
                             f'</w:tblBorders>')
         tblPr.append(borders)
 
-    def add_title(text):
-        p = doc.add_paragraph()
-        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        p.paragraph_format.space_before = Pt(0)
-        p.paragraph_format.space_after = Pt(6)
-        run = p.add_run(text)
-        run.bold = True
-        run.font.size = Pt(18)
-        run.font.color.rgb = RGBColor(16, 44, 87) # Deep Blue
+    def add_formatted_runs(paragraph, text, base_italic=False):
+        """Helper to parse inline backticks like `code` and format nicely without backticks"""
+        parts = re.split(r'(`[^`]+`)', text)
+        for part in parts:
+            if part.startswith('`') and part.endswith('`') and len(part) >= 2:
+                code_text = part[1:-1]
+                run = paragraph.add_run(code_text)
+                run.font.name = 'Consolas'
+                run.font.size = Pt(10.5)
+                run.font.color.rgb = RGBColor(180, 40, 70) # Dark berry
+            else:
+                if part:
+                    run = paragraph.add_run(part)
+                    run.italic = base_italic
+
+    def add_p(text, bold_prefix="", italic=False, align="justify"):
+        """Safely add a paragraph. If text has newlines, split them to prevent Word justification stretch bugs!"""
+        lines = [line.strip() for line in text.split('\n') if line.strip()]
+        last_p = None
+        for i, line in enumerate(lines):
+            p = doc.add_paragraph()
+            p.paragraph_format.space_after = Pt(4)
+            p.paragraph_format.line_spacing = 1.25
+
+            if align == "justify":
+                # Short lines (like introductory labels ending with ':') should be left-aligned
+                if line.endswith(':') or len(line) < 60:
+                    p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                else:
+                    p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+            elif align == "center":
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            else:
+                p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+
+            if i == 0 and bold_prefix:
+                r_pre = p.add_run(bold_prefix)
+                r_pre.bold = True
+                r_pre.font.color.rgb = RGBColor(16, 44, 87)
+
+            add_formatted_runs(p, line, base_italic=italic)
+            last_p = p
+        return last_p
+
+    def add_bullet(text, bold_prefix="", level=0):
+        p = doc.add_paragraph(style='List Bullet')
+        p.alignment = WD_ALIGN_PARAGRAPH.LEFT # NEVER justify bullet points to avoid spacing gaps!
+        p.paragraph_format.space_after = Pt(3)
+        p.paragraph_format.line_spacing = 1.2
+        if level > 0:
+            p.paragraph_format.left_indent = Inches(0.25 * (level + 1))
+        if bold_prefix:
+            r_pre = p.add_run(bold_prefix)
+            r_pre.bold = True
+            r_pre.font.color.rgb = RGBColor(16, 44, 87)
+        add_formatted_runs(p, text)
         return p
 
-    def add_subtitle(text):
+    def add_numbered(text, number_str=""):
         p = doc.add_paragraph()
-        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        p.paragraph_format.space_before = Pt(0)
-        p.paragraph_format.space_after = Pt(18)
-        run = p.add_run(text)
-        run.bold = True
-        run.font.size = Pt(14)
-        run.font.color.rgb = RGBColor(41, 75, 107)
+        p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        p.paragraph_format.space_after = Pt(3)
+        p.paragraph_format.line_spacing = 1.2
+        p.paragraph_format.left_indent = Inches(0.25)
+        if number_str:
+            r_num = p.add_run(number_str + " ")
+            r_num.bold = True
+            r_num.font.color.rgb = RGBColor(16, 44, 87)
+        add_formatted_runs(p, text)
         return p
 
     def add_h1(text):
         p = doc.add_paragraph()
-        p.paragraph_format.space_before = Pt(14)
+        p.paragraph_format.space_before = Pt(16)
         p.paragraph_format.space_after = Pt(6)
         p.paragraph_format.keep_with_next = True
         run = p.add_run(text)
         run.bold = True
-        run.font.size = Pt(15)
-        run.font.color.rgb = RGBColor(16, 44, 87)
+        run.font.size = Pt(14.5)
+        run.font.color.rgb = RGBColor(16, 44, 87) # Deep Blue
         return p
 
     def add_h2(text):
         p = doc.add_paragraph()
-        p.paragraph_format.space_before = Pt(10)
+        p.paragraph_format.space_before = Pt(12)
         p.paragraph_format.space_after = Pt(4)
         p.paragraph_format.keep_with_next = True
         run = p.add_run(text)
         run.bold = True
         run.font.size = Pt(13)
-        run.font.color.rgb = RGBColor(41, 75, 107)
+        run.font.color.rgb = RGBColor(30, 64, 175) # Blue 700
         return p
 
     def add_h3(text):
         p = doc.add_paragraph()
-        p.paragraph_format.space_before = Pt(6)
-        p.paragraph_format.space_after = Pt(2)
+        p.paragraph_format.space_before = Pt(8)
+        p.paragraph_format.space_after = Pt(3)
         p.paragraph_format.keep_with_next = True
         run = p.add_run(text)
         run.bold = True
         run.font.size = Pt(12)
-        run.font.color.rgb = RGBColor(60, 60, 60)
+        run.font.color.rgb = RGBColor(51, 65, 85) # Slate 700
         return p
 
-    def add_p(text, bold_prefix="", italic=False):
-        p = doc.add_paragraph()
-        p.paragraph_format.space_after = Pt(4)
-        p.paragraph_format.line_spacing = 1.25
-        p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-        if bold_prefix:
-            r_pre = p.add_run(bold_prefix)
-            r_pre.bold = True
-            r_pre.font.color.rgb = RGBColor(20, 20, 20)
-        r = p.add_run(text)
-        r.italic = italic
-        return p
+    def add_formula_box(title, formula_lines):
+        """Dedicated callout block for mathematical formulas with proper indentation and Cambria Math font"""
+        tbl = doc.add_table(rows=1, cols=1)
+        tbl.alignment = WD_TABLE_ALIGNMENT.CENTER
+        cell = tbl.cell(0, 0)
+        cell.width = Inches(6.5)
+        set_cell_background(cell, "F8FAFC") # Slate 50
+        set_cell_margins(cell, top=100, bottom=100, left=180, right=180)
+        tcPr = cell._tc.get_or_add_tcPr()
+        borders = parse_xml(f'<w:tcBorders {nsdecls("w")}>'
+                            f'<w:left w:val="single" w:sz="18" w:space="0" w:color="2563EB"/>' # Accent Blue line
+                            f'<w:top w:val="single" w:sz="4" w:space="0" w:color="E2E8F0"/>'
+                            f'<w:bottom w:val="single" w:sz="4" w:space="0" w:color="E2E8F0"/>'
+                            f'<w:right w:val="single" w:sz="4" w:space="0" w:color="E2E8F0"/>'
+                            f'</w:tcBorders>')
+        tcPr.append(borders)
 
-    def add_bullet(text, bold_prefix=""):
-        p = doc.add_paragraph(style='List Bullet')
+        p = cell.paragraphs[0]
+        p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        p.paragraph_format.space_after = Pt(3)
+        r_title = p.add_run(title)
+        r_title.bold = True
+        r_title.font.size = Pt(11)
+        r_title.font.color.rgb = RGBColor(30, 64, 175)
+
+        for line in formula_lines:
+            p_f = cell.add_paragraph()
+            p_f.alignment = WD_ALIGN_PARAGRAPH.LEFT # NEVER justify formulas!
+            p_f.paragraph_format.space_after = Pt(2)
+            p_f.paragraph_format.left_indent = Inches(0.2)
+            r_f = p_f.add_run(line)
+            r_f.font.name = 'Cambria Math'
+            r_f.font.size = Pt(11.5)
+            r_f.font.color.rgb = RGBColor(15, 23, 42)
+
+        doc.add_paragraph().paragraph_format.space_after = Pt(3)
+
+    def add_code_box(title, commands):
+        """Dedicated code panel with Consolas font and subtle shading"""
+        tbl = doc.add_table(rows=1, cols=1)
+        tbl.alignment = WD_TABLE_ALIGNMENT.CENTER
+        cell = tbl.cell(0, 0)
+        cell.width = Inches(6.5)
+        set_cell_background(cell, "F1F5F9") # Slate 100
+        set_cell_margins(cell, top=100, bottom=100, left=180, right=180)
+        tcPr = cell._tc.get_or_add_tcPr()
+        borders = parse_xml(f'<w:tcBorders {nsdecls("w")}>'
+                            f'<w:left w:val="single" w:sz="18" w:space="0" w:color="0F172A"/>'
+                            f'<w:top w:val="single" w:sz="4" w:space="0" w:color="CBD5E1"/>'
+                            f'<w:bottom w:val="single" w:sz="4" w:space="0" w:color="CBD5E1"/>'
+                            f'<w:right w:val="single" w:sz="4" w:space="0" w:color="CBD5E1"/>'
+                            f'</w:tcBorders>')
+        tcPr.append(borders)
+
+        p = cell.paragraphs[0]
+        p.alignment = WD_ALIGN_PARAGRAPH.LEFT
         p.paragraph_format.space_after = Pt(2)
-        p.paragraph_format.line_spacing = 1.2
-        if bold_prefix:
-            r_pre = p.add_run(bold_prefix)
-            r_pre.bold = True
-        p.add_run(text)
-        return p
+        r_title = p.add_run(title)
+        r_title.bold = True
+        r_title.font.size = Pt(10.5)
+        r_title.font.color.rgb = RGBColor(15, 23, 42)
+
+        for cmd in commands:
+            p_c = cell.add_paragraph()
+            p_c.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            p_c.paragraph_format.space_after = Pt(2)
+            p_c.paragraph_format.left_indent = Inches(0.15)
+            r_c = p_c.add_run(cmd)
+            r_c.font.name = 'Consolas'
+            r_c.font.size = Pt(10)
+            r_c.font.color.rgb = RGBColor(30, 41, 59)
+
+        doc.add_paragraph().paragraph_format.space_after = Pt(3)
 
     def add_callout(text, title="LƯU Ý / ĐÓNG GÓP"):
         table = doc.add_table(rows=1, cols=1)
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
         cell = table.cell(0, 0)
-        set_cell_background(cell, "F0F4F8")
-        set_cell_margins(cell, top=140, bottom=140, left=200, right=200)
+        cell.width = Inches(6.5)
+        set_cell_background(cell, "EFF6FF") # Light blue
+        set_cell_margins(cell, top=120, bottom=120, left=180, right=180)
         tcPr = cell._tc.get_or_add_tcPr()
         borders = parse_xml(f'<w:tcBorders {nsdecls("w")}>'
                             f'<w:left w:val="single" w:sz="24" w:space="0" w:color="102C57"/>'
@@ -139,6 +239,7 @@ def create_report():
                             f'</w:tcBorders>')
         tcPr.append(borders)
         p = cell.paragraphs[0]
+        p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
         p.paragraph_format.space_after = Pt(2)
         r1 = p.add_run(f"[{title}] ")
         r1.bold = True
@@ -152,11 +253,11 @@ def create_report():
     # ==========================================
     p_inst = doc.add_paragraph()
     p_inst.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r = p_inst.add_run("BỘ GIÁO DỤC VÀ ĐÀO TẠO\nTRƯỜNG ĐẠI HỌC CÔNG NGHỆ THÔNG TIN & TRUYỀN THÔNG\nKHOA CÔNG NGHỆ THÔNG TIN\n---------------------------------")
-    r.bold = True
-    r.font.size = Pt(12)
+    r_inst = p_inst.add_run("BỘ GIÁO DỤC VÀ ĐÀO TẠO\nTRƯỜNG ĐẠI HỌC CÔNG NGHỆ THÔNG TIN & TRUYỀN THÔNG\nKHOA CÔNG NGHỆ THÔNG TIN\n---------------------------------")
+    r_inst.bold = True
+    r_inst.font.size = Pt(12)
 
-    doc.add_paragraph().paragraph_format.space_after = Pt(40)
+    doc.add_paragraph().paragraph_format.space_after = Pt(30)
 
     p_sub = doc.add_paragraph()
     p_sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -165,17 +266,25 @@ def create_report():
     r_sub.font.size = Pt(16)
     r_sub.font.color.rgb = RGBColor(16, 44, 87)
 
-    doc.add_paragraph().paragraph_format.space_after = Pt(20)
+    doc.add_paragraph().paragraph_format.space_after = Pt(15)
 
-    add_title("ĐỀ TÀI: NHÓM 5\nTHUẬT TOÁN CHIA ĐỂ TRỊ SONG SONG KẾT HỢP QUY HOẠCH ĐỘNG CHO BÀI TOÁN CĂN CHỈNH ĐA CHUỖI GEN (MULTIPLE SEQUENCE ALIGNMENT - MSA)")
+    p_title = doc.add_paragraph()
+    p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    r_title = p_title.add_run("ĐỀ TÀI: NHÓM 5\nTHUẬT TOÁN CHIA ĐỂ TRỊ SONG SONG KẾT HỢP QUY HOẠCH ĐỘNG CHO BÀI TOÁN CĂN CHỈNH ĐA CHUỖI GEN (MULTIPLE SEQUENCE ALIGNMENT - MSA)")
+    r_title.bold = True
+    r_title.font.size = Pt(17)
+    r_title.font.color.rgb = RGBColor(16, 44, 87)
+
+    doc.add_paragraph().paragraph_format.space_after = Pt(10)
 
     p_lead = doc.add_paragraph()
     p_lead.alignment = WD_ALIGN_PARAGRAPH.CENTER
     r_lead = p_lead.add_run("Tối ưu không gian trạng thái từ O(mn) về O(min(m, n)) bằng thuật toán Myers-Miller\nSong song hóa đa tầng OpenMP và Đánh giá độ chính xác sinh học trên BAliBASE 3.0")
     r_lead.italic = True
     r_lead.font.size = Pt(12)
+    r_lead.font.color.rgb = RGBColor(71, 85, 105)
 
-    doc.add_paragraph().paragraph_format.space_after = Pt(50)
+    doc.add_paragraph().paragraph_format.space_after = Pt(40)
 
     # Info table on cover
     info_table = doc.add_table(rows=6, cols=2)
@@ -191,16 +300,20 @@ def create_report():
     for i, (k, v) in enumerate(members):
         row = info_table.rows[i]
         c0, c1 = row.cells[0], row.cells[1]
-        c0.width = Inches(2.5)
-        c1.width = Inches(4.0)
+        c0.width = Inches(2.3)
+        c1.width = Inches(4.2)
         p0 = c0.paragraphs[0]
-        p0.add_run(k).bold = True
+        p0.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        r0 = p0.add_run(k)
+        r0.bold = True
+        r0.font.color.rgb = RGBColor(16, 44, 87)
         p1 = c1.paragraphs[0]
+        p1.alignment = WD_ALIGN_PARAGRAPH.LEFT
         p1.add_run(v)
         p0.paragraph_format.space_after = Pt(2)
         p1.paragraph_format.space_after = Pt(2)
 
-    doc.add_paragraph().paragraph_format.space_after = Pt(40)
+    doc.add_paragraph().paragraph_format.space_after = Pt(35)
 
     p_year = doc.add_paragraph()
     p_year.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -219,18 +332,29 @@ def create_report():
         "và dự đoán cấu trúc không gian của protein. Tuy nhiên, quy hoạch động đa chiều truyền thống giải bài toán này là NP-hard "
         "với độ phức tạp thời gian và không gian bùng nổ cấp số nhân O(L^K) đối với K chuỗi độ dài L, hoàn toàn bất khả thi trên máy tính."
     )
-    add_p(
-        "Để giải quyết triệt để vấn đề này, Nhóm 5 đã kết hợp ba trụ cột kỹ thuật giải thuật tiên tiến:\n"
-        "1. Kỹ thuật Chia để trị (Divide-and-Conquer): Hiện thực thuật toán Myers-Miller (1988) - biến thể mở rộng cho affine gap của thuật toán Hirschberg, "
+    add_p("Để giải quyết triệt để thách thức này, Nhóm 5 đã kết hợp ba trụ cột kỹ thuật giải thuật tiên tiến:")
+
+    add_numbered(
+        "Hiện thực thuật toán Myers-Miller (1988) - biến thể mở rộng cho affine gap của thuật toán Hirschberg, "
         "tối ưu triệt để dung lượng bộ nhớ cặp đôi từ bậc hai O(mn) về bậc tuyến tính O(min(m, n)). Kết quả thực nghiệm đo đạc thực tế ghi nhận mức giảm bộ nhớ "
-        "vượt trội từ 92.0 lần đến hơn 250 lần so với Needleman-Wunsch Gotoh, trong khi bảo đảm điểm số căn chỉnh tối ưu toán học đồng nhất 100%.\n"
-        "2. Chiến lược Căn chỉnh Tiến bộ (Progressive Alignment Pipeline): Xây dựng ma trận khoảng cách chuẩn hóa All-Pairs, gom cụm phân cấp cây hướng dẫn "
+        "vượt trội từ 92.0 lần đến hơn 250 lần so với Needleman-Wunsch Gotoh, trong khi bảo đảm điểm số căn chỉnh tối ưu toán học đồng nhất 100%.",
+        number_str="1. Kỹ thuật Chia để trị (Divide-and-Conquer):"
+    )
+    add_numbered(
+        "Xây dựng ma trận khoảng cách chuẩn hóa All-Pairs, gom cụm phân cấp cây hướng dẫn "
         "UPGMA (Unweighted Pair Group Method with Arithmetic Mean) với cơ chế giải quyết hòa điểm xác định (deterministic tie-breaking), và căn chỉnh profile-to-profile "
-        "dựa trên hàm điểm Sum-of-Pairs thưa kết hợp kỹ thuật lan truyền khoảng trống (gap propagation).\n"
-        "3. Tính toán Song song Đa tầng trên OpenMP: Khai thác song song hóa ở hai cấp độ: cấp độ tác vụ (Task-level) trên các cặp ma trận khoảng cách và cây hướng dẫn nhị phân; "
-        "kết hợp song song hóa cấp độ dữ liệu (Data-level wavefront DP) theo các đường chéo phụ (anti-diagonals).\n"
-        "4. Kiểm thử và Đánh giá Thực nghiệm trên Chuẩn BAliBASE 3.0: Đo đạc chính xác trên các tập tham chiếu RV11, RV12, RV20 với hai chỉ số chuẩn sinh học SP score (Sum-of-Pairs) "
-        "và TC score (Total Column) trên các khối lõi bảo tồn (Core Blocks). Hệ thống vượt qua 100% bộ kiểm thử tự động gồm 107 Unit Tests (139,446 assertions) và 234 E2E Tests."
+        "dựa trên hàm điểm Sum-of-Pairs thưa kết hợp kỹ thuật lan truyền khoảng trống (gap propagation).",
+        number_str="2. Chiến lược Căn chỉnh Tiến bộ (Progressive Alignment Pipeline):"
+    )
+    add_numbered(
+        "Khai thác song song hóa ở hai cấp độ: cấp độ tác vụ (Task-level) trên các cặp ma trận khoảng cách và cây hướng dẫn nhị phân; "
+        "kết hợp song song hóa cấp độ dữ liệu (Data-level wavefront DP) theo các đường chéo phụ (anti-diagonals).",
+        number_str="3. Tính toán Song song Đa tầng trên OpenMP:"
+    )
+    add_numbered(
+        "Đo đạc chính xác trên các tập tham chiếu RV11, RV12, RV20 với hai chỉ số chuẩn sinh học SP score (Sum-of-Pairs) "
+        "và TC score (Total Column) trên các khối lõi bảo tồn (Core Blocks). Hệ thống vượt qua 100% bộ kiểm thử tự động gồm 107 Unit Tests (139,446 assertions) và 234 E2E Tests.",
+        number_str="4. Kiểm thử và Đánh giá Thực nghiệm trên Chuẩn BAliBASE 3.0:"
     )
 
     add_callout(
@@ -238,6 +362,8 @@ def create_report():
         "không có rò rỉ bộ nhớ, không có data race, và biên dịch sạch sẽ không warning trên MSVC C++17 Release mode.",
         title="TÍNH HOÀN THIỆN CỦA ĐỒ ÁN"
     )
+
+    doc.add_page_break()
 
     # ==========================================
     # CHƯƠNG 1: TỔNG QUAN BÀI TOÁN MSA
@@ -253,39 +379,59 @@ def create_report():
     )
     add_p(
         "Căn chỉnh Đa chuỗi Gen (Multiple Sequence Alignment - MSA) là quá trình sắp đặt đồng thời từ 3 chuỗi sinh học trở lên sao cho các ký tự có nguồn gốc "
-        "tiến hóa chung (homologous residues) hoặc có cấu trúc và chức năng tương đồng nằm thẳng hàng trên cùng một cột. MSA là bước đầu vào bắt buộc trong: "
-        "- Xây dựng cây phát sinh loài (Phylogenetic tree reconstruction) để tìm hiểu nguồn gốc tiến hóa của các loài.\n"
-        "- Nhận diện các motif chức năng và vùng hoạt động (active sites) được bảo tồn cao độ trong protein.\n"
-        "- Dự đoán cấu trúc bậc hai và bậc ba của protein (ví dụ hệ thống AlphaFold sử dụng MSA làm input cốt lõi).\n"
-        "- Thiết kế thuốc và kháng thể nhắm trúng đích."
+        "tiến hóa chung (homologous residues) hoặc có cấu trúc và chức năng tương đồng nằm thẳng hàng trên cùng một cột. MSA là bước đầu vào bắt buộc trong các ứng dụng:"
     )
+    add_bullet("Xây dựng cây phát sinh loài (Phylogenetic tree reconstruction) để tìm hiểu nguồn gốc tiến hóa của các loài sinh vật.")
+    add_bullet("Nhận diện các motif chức năng và vùng hoạt động (active sites) được bảo tồn cao độ trong cấu trúc protein.")
+    add_bullet("Dự đoán cấu trúc bậc hai và bậc ba của protein (hệ thống AlphaFold sử dụng MSA làm vector đặc trưng đầu vào cốt lõi).")
+    add_bullet("Thiết kế thuốc sinh học và kháng thể nhắm trúng đích phân tử.")
 
     add_h2("1.2. Phát biểu Toán học của Bài toán MSA")
     add_p(
         "Cho tập hợp K chuỗi protein S = {S_1, S_2, ..., S_K} trên bảng chữ cái amino acid Σ (gồm 20 amino acid tiêu chuẩn). "
         "Một phép căn chỉnh đa chuỗi S' = {S'_1, S'_2, ..., S'_K} là tập hợp K chuỗi mới trên bảng chữ cái mở rộng Σ' = Σ ∪ {'-'} (trong đó '-' đại diện cho khoảng trống - gap) "
-        "thỏa mãn các điều kiện tiên quyết sau:\n"
-        "1. Mọi chuỗi S'_i trong S' đều có cùng độ dài L (L ≥ max |S_i|).\n"
-        "2. Chuỗi S'_i sau khi loại bỏ tất cả các ký tự '-' phải trùng khớp chính xác với chuỗi ban đầu S_i (bảo toàn 100% amino acid).\n"
-        "3. Không tồn tại bất kỳ cột nào chứa toàn bộ khoảng trống '-' (không có cột toàn gap)."
+        "thỏa mãn ba điều kiện tiên quyết:"
     )
+    add_bullet("Mọi chuỗi S'_i trong S' đều có cùng độ dài L (L ≥ max |S_i|).")
+    add_bullet("Chuỗi S'_i sau khi loại bỏ tất cả các ký tự '-' phải trùng khớp chính xác 100% với chuỗi ban đầu S_i (bảo toàn amino acid).")
+    add_bullet("Không tồn tại bất kỳ cột nào chứa toàn bộ khoảng trống '-' (không có cột toàn gap).")
 
     add_h3("Mô hình điểm số Sum-of-Pairs (SP Score) và Ma trận Thay thế BLOSUM62:")
     add_p(
-        "Hàm mục tiêu chuẩn trong MSA là tối đa hóa điểm số cặp đôi tổng (Sum-of-Pairs Score). Điểm của phép căn chỉnh S' là tổng điểm của tất cả C(K, 2) = K(K-1)/2 "
-        "cặp chuỗi được chiếu (projected pairwise alignments):\n"
-        "Score(S') = Σ_{1 ≤ i < j ≤ K} PairwiseScore(S'_i, S'_j)\n"
-        "Trong đó, điểm cặp đôi PairwiseScore sử dụng ma trận thay thế BLOSUM62 (Henikoff & Henikoff, 1992) đối xứng 24x24 phản ánh xác suất đột biến bảo tồn hóa sinh "
-        "giữa các amino acid, kết hợp mô hình điểm phạt khoảng trống affine (Affine Gap Penalty)."
+        "Hàm mục tiêu chuẩn trong MSA là tối đa hóa điểm số cặp đôi tổng (Sum-of-Pairs Score). Điểm của phép căn chỉnh S' là tổng điểm của tất cả "
+        "C(K, 2) = K(K-1)/2 cặp chuỗi được chiếu (projected pairwise alignments):"
+    )
+
+    add_formula_box(
+        "Công thức Hàm mục tiêu Sum-of-Pairs:",
+        [
+            "Score(S') = Σ_{1 ≤ i < j ≤ K} PairwiseScore(S'_i, S'_j)",
+            "PairwiseScore(A, B) = Σ_{c=1}^L s(A[c], B[c]) - AffineGapPenalty(A, B)"
+        ]
+    )
+
+    add_p(
+        "Trong đó, điểm cặp đôi sử dụng ma trận thay thế BLOSUM62 (Henikoff & Henikoff, 1992) đối xứng kích thước 24x24 (bao gồm 20 amino acid tiêu chuẩn "
+        "và các mã mập mờ B, Z, X, *) phản ánh xác suất đột biến bảo tồn hóa sinh giữa các amino acid."
     )
 
     add_h3("Mô hình Phạt Khoảng trống Affine (Affine Gap Penalty):")
     add_p(
         "Sinh học thực nghiệm chứng minh rằng một biến cố đột biến chèn/xóa đoạn dài k ký tự có xác suất xảy ra cao hơn nhiều so với k biến cố chèn/xóa đơn lẻ độc lập. "
-        "Do đó, mô hình phạt tuyến tính g(k) = k * g_e gây phân mảnh indel nghiêm trọng. Thay vào đó, mô hình affine gap penalty chuẩn Gotoh (1982) được áp dụng:\n"
-        "Cost(gap of length k) = g_o + (k - 1) * g_e\n"
-        "Trong đó g_o là điểm phạt mở khoảng trống (gap open penalty, giá trị âm, ví dụ -10), và g_e là điểm phạt mở rộng khoảng trống (gap extension penalty, ví dụ -1). "
-        "Vì g_o âm sâu hơn g_e (|g_o| >> |g_e|), thuật toán sẽ ưu tiên mở rộng các khoảng trống liên tục thay vì rải rác các khoảng trống nhỏ."
+        "Do đó, mô hình phạt tuyến tính g(k) = k * g_e gây phân mảnh indel nghiêm trọng. Thay vào đó, mô hình affine gap penalty chuẩn Gotoh (1982) được áp dụng:"
+    )
+
+    add_formula_box(
+        "Mô hình Phạt Affine Gap Penalty (Gotoh, 1982):",
+        [
+            "Cost(gap length k) = g_o + (k - 1) * g_e",
+            "Trong đó: g_o = -10 (Gap Open Penalty), g_e = -1 (Gap Extension Penalty)"
+        ]
+    )
+
+    add_p(
+        "Vì g_o âm sâu hơn g_e (|g_o| >> |g_e|), thuật toán sẽ ưu tiên mở rộng các khoảng trống liên tục thay vì rải rác các khoảng trống nhỏ, "
+        "phù hợp chặt chẽ với cơ chế sinh học thực tế."
     )
 
     add_h2("1.3. Tính khó NP-Hard và Sự bùng nổ Không gian Trạng thái")
@@ -302,6 +448,8 @@ def create_report():
         "kết hợp quy hoạch động cặp đôi có tối ưu bộ nhớ chia để trị và gom cụm phân cấp cây hướng dẫn."
     )
 
+    doc.add_page_break()
+
     # ==========================================
     # CHƯƠNG 2: NỀN TẢNG LÝ THUYẾT VÀ GIẢI THUẬT
     # ==========================================
@@ -315,18 +463,24 @@ def create_report():
     add_bullet("Ma trận Ix(i, j): Điểm căn chỉnh tối ưu khi S_1[i] bắt cặp với ký tự khoảng trống '-' (chèn gap vào chuỗi S_2, bước đi thẳng đứng).")
     add_bullet("Ma trận Iy(i, j): Điểm căn chỉnh tối ưu khi ký tự khoảng trống '-' bắt cặp với S_2[j] (chèn gap vào chuỗi S_1, bước đi nằm ngang).")
 
-    add_p(
-        "Hệ thức truy hồi Bellman của Gotoh:\n"
-        "M(i, j) = max{ M(i-1, j-1), Ix(i-1, j-1), Iy(i-1, j-1) } + BLOSUM62(S_1[i], S_2[j])\n"
-        "Ix(i, j) = max{ M(i-1, j) + g_o, Ix(i-1, j) + g_e, Iy(i-1, j) + g_o }\n"
-        "Iy(i, j) = max{ M(i, j-1) + g_o, Iy(i, j-1) + g_e, Ix(i, j-1) + g_o }"
+    add_formula_box(
+        "Hệ thức Truy hồi Bellman Gotoh (1982):",
+        [
+            "M(i, j)  = max{ M(i-1, j-1), Ix(i-1, j-1), Iy(i-1, j-1) } + BLOSUM62(S_1[i], S_2[j])",
+            "Ix(i, j) = max{ M(i-1, j) + g_o, Ix(i-1, j) + g_e, Iy(i-1, j) + g_o }",
+            "Iy(i, j) = max{ M(i, j-1) + g_o, Iy(i, j-1) + g_e, Ix(i, j-1) + g_o }"
+        ]
     )
-    add_p(
-        "Điều kiện biên ban đầu:\n"
-        "M(0, 0) = 0; M(i, 0) = -∞; M(0, j) = -∞;\n"
-        "Ix(i, 0) = g_o + (i - 1) * g_e; Ix(0, j) = -∞;\n"
-        "Iy(0, j) = g_o + (j - 1) * g_e; Iy(i, 0) = -∞."
+
+    add_formula_box(
+        "Điều kiện Biên Ban đầu (Boundary Conditions):",
+        [
+            "M(0, 0)  = 0;          M(i, 0)  = -∞;                      M(0, j)  = -∞",
+            "Ix(i, 0) = g_o + (i - 1) * g_e;  Ix(0, j) = -∞",
+            "Iy(0, j) = g_o + (j - 1) * g_e;  Iy(i, 0) = -∞"
+        ]
     )
+
     add_p(
         "Hạn chế cốt tử của Gotoh NW Baseline: Thuật toán cần lưu trữ toàn bộ 3 ma trận có kích thước (m+1) x (n+1) số nguyên 32-bit trong RAM "
         "để phục vụ bước truy vết ngược (Traceback). Khi căn chỉnh các chuỗi protein dài m = n = 10,000, bộ nhớ yêu cầu là 3 * 10,000 * 10,000 * 4 bytes ≈ 1.2 GB RAM. "
@@ -342,18 +496,30 @@ def create_report():
     add_h3("Nguyên lý Chia đôi và Điểm cắt Tối ưu (Optimal Midpoint Split):")
     add_p(
         "Giả sử cần căn chỉnh chuỗi S_1 (độ dài m) với chuỗi S_2 (độ dài n). "
-        "Myers-Miller chia chuỗi S_1 tại vị trí trung vị mid = ⌊m / 2⌋ thành hai nửa: nửa trên S_1[1..mid] và nửa dưới S_1[mid+1..m].\n"
-        "1. Lượt tiến (Forward Pass): Chạy quy hoạch động Gotoh từ hàng 0 đến hàng mid, chỉ lưu hai hàng liền kề (hàng trước và hàng hiện tại) "
-        "để tính vector điểm tại mid: fM(j), fIx(j), fIy(j) với mọi 0 ≤ j ≤ n. Không gian bộ nhớ chỉ là O(n).\n"
-        "2. Lượt lùi (Backward Pass): Chạy quy hoạch động Gotoh ngược từ hàng m về hàng mid trên chuỗi đảo ngược, thu được các vector: "
-        "bM(j), bIx(j), bIy(j) biểu diễn điểm tối ưu từ ô (mid, j) tới ô đích (m, n). Không gian bộ nhớ cũng chỉ là O(n).\n"
-        "3. Tìm điểm cắt tối ưu j*: Tại đường phân cách mid, đường đi tối ưu có thể đi qua một đỉnh (mid, j) hoặc cắt qua cạnh dọc Ix (khoảng trống dọc cắt ngang đường mid). "
+        "Myers-Miller chia chuỗi S_1 tại vị trí trung vị mid = ⌊m / 2⌋ thành hai nửa: nửa trên S_1[1..mid] và nửa dưới S_1[mid+1..m]:"
+    )
+    add_numbered(
+        "Chạy quy hoạch động Gotoh từ hàng 0 đến hàng mid, chỉ lưu hai hàng liền kề (hàng trước và hàng hiện tại) "
+        "để tính vector điểm tại mid: fM(j), fIx(j), fIy(j) với mọi 0 ≤ j ≤ n. Không gian bộ nhớ chỉ là O(n).",
+        number_str="1. Lượt tiến (Forward Pass):"
+    )
+    add_numbered(
+        "Chạy quy hoạch động Gotoh ngược từ hàng m về hàng mid trên chuỗi đảo ngược, thu được các vector: "
+        "bM(j), bIx(j), bIy(j) biểu diễn điểm tối ưu từ ô (mid, j) tới ô đích (m, n). Không gian bộ nhớ cũng chỉ là O(n).",
+        number_str="2. Lượt lùi (Backward Pass):"
+    )
+    add_numbered(
+        "Tại đường phân cách mid, đường đi tối ưu có thể đi qua một đỉnh (mid, j) hoặc cắt qua cạnh dọc Ix (khoảng trống dọc cắt ngang đường mid). "
         "Ta tìm vị trí j_C* đạt max { fM(j) + bM(j), fIx(j) + bIx(j), fIy(j) + bIy(j) } "
-        "và j_D* đạt max { fIx(j) + bIx(j) - g_o + g_e }.\n"
-        "4. Đệ quy Chia để trị: Sau khi xác định được điểm chia (mid, j*), bài toán được phân rã thành hai bài toán con độc lập:\n"
+        "và j_D* đạt max { fIx(j) + bIx(j) - g_o + g_e }.",
+        number_str="3. Tìm điểm cắt tối ưu j*:"
+    )
+    add_numbered(
+        "Sau khi xác định được điểm chia (mid, j*), bài toán được phân rã thành hai bài toán con độc lập:\n"
         "   - Bài toán con 1: Căn chỉnh S_1[1..mid] với S_2[1..j*].\n"
         "   - Bài toán con 2: Căn chỉnh S_1[mid+1..m] với S_2[j*+1..n].\n"
-        "Hai bài toán con này được giải đệ quy cho đến khi độ dài m ≤ 2 hoặc n ≤ 2 thì giải trực tiếp bằng Gotoh base-case."
+        "Hai bài toán con này được giải đệ quy cho đến khi độ dài m ≤ 2 hoặc n ≤ 2 thì giải trực tiếp bằng Gotoh base-case.",
+        number_str="4. Đệ quy Chia để trị:"
     )
 
     add_h3("Xử lý Biên Đặc biệt (Edge-Crossing Flags - tb, te):")
@@ -388,15 +554,20 @@ def create_report():
     add_p(
         "Thứ tự căn chỉnh các chuỗi có ý nghĩa quyết định tới chất lượng MSA. Nguyên lý sinh học chỉ ra rằng các chuỗi có độ tương đồng cao (khoảng cách tiến hóa gần) "
         "cần được căn chỉnh trước để tạo ra profile chuẩn xác, các chuỗi xa hơn sẽ được thêm vào sau. "
-        "Thuật toán UPGMA (Sneath & Sokal, 1973) xây dựng cây hướng dẫn nhị phân (Binary Guide Tree) như sau:\n"
-        "1. Khởi tạo N cụm đơn, mỗi cụm chứa 1 chuỗi.\n"
-        "2. Tìm cặp cụm (u, v) có khoảng cách d(u, v) nhỏ nhất trong ma trận khoảng cách.\n"
-        "3. Hợp nhất hai cụm u và v thành cụm cha mới w. Chiều cao node cha là height(w) = d(u, v) / 2.\n"
-        "4. Cập nhật khoảng cách trung bình số học từ cụm mới w tới mọi cụm k còn lại: "
-        "d(w, k) = (|u| * d(u, k) + |v| * d(v, k)) / (|u| + |v|).\n"
-        "5. Lặp lại N - 1 bước cho đến khi toàn bộ các chuỗi hợp nhất vào node gốc (Root).\n"
-        "Hệ thống cài đặt cơ chế xử lý hòa điểm xác định (Deterministic Tie-Breaking) ưu tiên chỉ số nút nhỏ nhất, đảm bảo cây sinh ra luôn luôn đồng nhất trên mọi máy tính."
+        "Thuật toán UPGMA (Sneath & Sokal, 1973) xây dựng cây hướng dẫn nhị phân (Binary Guide Tree) qua các bước:"
     )
+    add_numbered("Khởi tạo N cụm đơn, mỗi cụm chứa đúng 1 chuỗi.", number_str="Bước 1:")
+    add_numbered("Tìm cặp cụm (u, v) có khoảng cách d(u, v) nhỏ nhất trong ma trận khoảng cách.", number_str="Bước 2:")
+    add_numbered("Hợp nhất hai cụm u và v thành cụm cha mới w. Chiều cao node cha là height(w) = d(u, v) / 2.", number_str="Bước 3:")
+    add_numbered("Cập nhật khoảng cách trung bình số học từ cụm mới w tới mọi cụm k còn lại: "
+                 "d(w, k) = (|u| * d(u, k) + |v| * d(v, k)) / (|u| + |v|).", number_str="Bước 4:")
+    add_numbered("Lặp lại N - 1 bước cho đến khi toàn bộ các chuỗi hợp nhất vào node gốc (Root).", number_str="Bước 5:")
+    add_p(
+        "Hệ thống cài đặt cơ chế xử lý hòa điểm xác định (Deterministic Tie-Breaking) ưu tiên chỉ số nút nhỏ nhất, "
+        "đảm bảo cây sinh ra luôn luôn đồng nhất trên mọi môi trường thực thi."
+    )
+
+    doc.add_page_break()
 
     # ==========================================
     # CHƯƠNG 3: THIẾT KẾ VÀ SONG SONG HÓA OPENMP
@@ -409,16 +580,17 @@ def create_report():
     )
 
     add_h2("3.1. Song song hóa Cấp độ Tác vụ (Task-Level Concurrency)")
+    add_p("1. Tính toán Song song Ma trận Khoảng cách All-Pairs:", bold_prefix="Cơ chế 1: ")
     add_p(
-        "1. Tính toán Song song Ma trận Khoảng cách All-Pairs: "
         "Để dựng cây UPGMA, hệ thống cần tính toán C(N, 2) = N(N-1)/2 phép căn chỉnh Needleman-Wunsch cặp đôi độc lập. "
         "Các phép căn chỉnh này hoàn toàn không có phụ thuộc dữ liệu. "
         "Nhóm sử dụng cấu trúc phẳng hóa chỉ số cặp và chỉ thị `#pragma omp parallel for schedule(dynamic, 1)`: "
         "Lập lịch động (dynamic scheduling) cân bằng tải tối ưu khi các chuỗi có độ dài lệch nhau. "
         "Mỗi luồng sở hữu đối tượng căn chỉnh và bộ nhớ riêng biệt, loại trừ 100% xung đột ghi (Zero Race Condition)."
     )
+
+    add_p("2. Song song hóa Duyệt Cây Hướng dẫn Đa tầng (Tree Scheduler Concurrency):", bold_prefix="Cơ chế 2: ")
     add_p(
-        "2. Song song hóa Duyệt Cây Hướng dẫn Đa tầng (Tree Scheduler Concurrency): "
         "Trong cây nhị phân UPGMA, hai nhánh con độc lập (left clade và right clade) của một nút nội bộ có thể được căn chỉnh profile hoàn toàn đồng thời. "
         "Nhóm cài đặt cơ chế `#pragma omp parallel sections` lồng nhau (`omp_set_nested(1)`) kết hợp cờ giới hạn độ sâu `max_task_depth = 4` "
         "để tránh chi phí tạo luồng (thread overhead) khi cây con đã quá nhỏ."
@@ -429,12 +601,14 @@ def create_report():
         "Trong trường hợp căn chỉnh hai chuỗi rất dài, song song hóa nội bộ bảng quy hoạch động là cần thiết. "
         "Ô (i, j) phụ thuộc vào 3 ô lân cận: (i-1, j-1), (i-1, j), và (i, j-1). "
         "Do đó, tất cả các ô nằm trên cùng một đường chéo phụ d = i + j đều hoàn toàn độc lập với nhau và có thể tính song song cùng lúc!\n"
-        "Thuật toán Wavefront Gotoh DP của Nhóm 5 hoạt động như sau:\n"
-        "- Vòng lặp ngoài duyệt theo đường chéo d từ 2 tới m + n.\n"
-        "- Trên mỗi đường chéo d, xác định tập các ô i ∈ [min_i, max_i].\n"
-        "- Nếu số lượng ô trên đường chéo vượt ngưỡng threshold (256 ô), kích hoạt `#pragma omp parallel for schedule(static)` để các lõi CPU xử lý song song.\n"
-        "- Bộ đệm quay vòng 3 mảng (Rotating 3-Buffer: buf_curr, buf_prev1, buf_prev2) đảm bảo không gian bộ nhớ chỉ là O(min(m, n))."
+        "Thuật toán Wavefront Gotoh DP của Nhóm 5 hoạt động như sau:"
     )
+    add_bullet("Vòng lặp ngoài duyệt theo đường chéo d từ 2 tới m + n.")
+    add_bullet("Trên mỗi đường chéo d, xác định tập các ô i ∈ [min_i, max_i].")
+    add_bullet("Nếu số lượng ô trên đường chéo vượt ngưỡng threshold (256 ô), kích hoạt `#pragma omp parallel for schedule(static)` để các lõi CPU xử lý song song.")
+    add_bullet("Bộ đệm quay vòng 3 mảng (Rotating 3-Buffer: buf_curr, buf_prev1, buf_prev2) đảm bảo không gian bộ nhớ chỉ là O(min(m, n)).")
+
+    doc.add_page_break()
 
     # ==========================================
     # CHƯƠNG 4: THIẾT KẾ HỆ THỐNG VÀ CÀI ĐẶT C++17
@@ -448,10 +622,14 @@ def create_report():
     arch_table.alignment = WD_TABLE_ALIGNMENT.CENTER
     set_table_borders(arch_table)
     headers = ["Module / Thư viện", "Các Lớp / Chức năng Chính", "Milestone"]
+    col_widths = [Inches(1.8), Inches(3.5), Inches(1.2)]
+
     for j, h in enumerate(headers):
         cell = arch_table.cell(0, j)
+        cell.width = col_widths[j]
         set_cell_background(cell, "102C57")
         p = cell.paragraphs[0]
+        p.alignment = WD_ALIGN_PARAGRAPH.LEFT
         r = p.add_run(h)
         r.bold = True
         r.font.color.rgb = RGBColor(255, 255, 255)
@@ -467,20 +645,39 @@ def create_report():
     for i, row in enumerate(arch_data):
         for j, val in enumerate(row):
             cell = arch_table.cell(i+1, j)
+            cell.width = col_widths[j]
             if i % 2 == 1:
                 set_cell_background(cell, "F9FBFD")
-            cell.paragraphs[0].add_run(val)
+            p = cell.paragraphs[0]
+            p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            p.add_run(val)
 
     doc.add_paragraph().paragraph_format.space_after = Pt(8)
 
     add_h2("4.1. Ứng dụng Dòng lệnh CLI msa_align")
     add_p(
-        "File thực thi `msa_align.exe` cung cấp giao diện dòng lệnh linh hoạt, dễ dàng tích hợp vào các pipeline sinh học tự động:\n"
-        "- Căn chỉnh đa chuỗi cơ bản: `msa_align -i input.fasta -o output.aln.fa -t 4`\n"
-        "- So sánh đối chứng Hirschberg với Needleman-Wunsch: `msa_align -i input.msf --baseline-compare`\n"
-        "- Chạy Benchmark hiệu năng và độ chính xác: `msa_align -i input.msf --benchmark`\n"
-        "- Tùy biến tham số phạt gap: `--gap-open -10 --gap-extend -1`"
+        "File thực thi `msa_align.exe` cung cấp giao diện dòng lệnh linh hoạt, dễ dàng tích hợp vào các pipeline sinh học tự động. "
+        "Các lệnh điều khiển chính bao gồm:"
     )
+
+    add_code_box(
+        "Cú pháp dòng lệnh thực thi msa_align:",
+        [
+            "# 1. Căn chỉnh đa chuỗi cơ bản với 4 luồng OpenMP xuất ra file FASTA:",
+            "msa_align -i input.fasta -o output.aln.fa -t 4",
+            "",
+            "# 2. Chạy chế độ so sánh đối chứng Myers-Miller Linear với Gotoh NW baseline:",
+            "msa_align -i input.msf --baseline-compare",
+            "",
+            "# 3. Chạy benchmark hiệu năng đa luồng và độ chính xác sinh học:",
+            "msa_align -i input.msf --benchmark",
+            "",
+            "# 4. Tùy biến tham số phạt khoảng trống affine gap penalty:",
+            "msa_align -i input.fasta --gap-open -10 --gap-extend -1"
+        ]
+    )
+
+    doc.add_page_break()
 
     # ==========================================
     # CHƯƠNG 5: THỰC NGHIỆM VÀ ĐÁNH GIÁ TRÊN BALIBASE
@@ -488,15 +685,42 @@ def create_report():
     add_h1("CHƯƠNG 5: THỰC NGHIỆM VÀ ĐÁNH GIÁ TRÊN TẬP DỮ LIỆU BALIBASE 3.0")
 
     add_h2("5.1. Môi trường Thực nghiệm và Dữ liệu Kiểm thử")
-    add_p(
-        "Hệ thống được kiểm thử thực tế trên máy tính cá nhân cấu hình chuẩn:\n"
-        "- Hệ điều hành: Microsoft Windows 11 (64-bit)\n"
-        "- Bộ vi xử lý: Intel Core / AMD Ryzen đa nhân x86_64\n"
-        "- Trình biên dịch: Microsoft Visual Studio 2019 MSVC C++17 (MSVC v142) với cờ tối ưu Release `/O2`, OpenMP enabled\n"
-        "- Bộ dữ liệu kiểm định: Chuẩn quốc tế BAliBASE 3.0 (Benchmark Alignment Database):\n"
-        "  + RV11 (BB11001.msf): Nhóm chuỗi phân kỳ cao (equidistant sequences, độ tương đồng chuỗi < 20%).\n"
-        "  + RV12 (BB12001.msf): Nhóm chuỗi tương đồng trung bình (độ tương đồng chuỗi 20% - 40%)."
-    )
+    add_p("Hệ thống được kiểm thử thực tế trên máy tính cá nhân cấu hình chuẩn:")
+
+    # Clean specs table (replaces the broken justified bullet lines!)
+    spec_table = doc.add_table(rows=5, cols=2)
+    spec_table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    set_table_borders(spec_table)
+    s_col_widths = [Inches(2.2), Inches(4.3)]
+
+    specs = [
+        ("Hệ điều hành", "Microsoft Windows 11 (64-bit)"),
+        ("Bộ vi xử lý (CPU)", "Intel Core / AMD Ryzen đa nhân x86_64"),
+        ("Trình biên dịch & Cờ tối ưu", "Microsoft Visual Studio 2019 MSVC C++17 (/std:c++17, /O2, /MP, OpenMP enabled)"),
+        ("Chuẩn kiểm định sinh học", "BAliBASE 3.0 (Benchmark Alignment Database)\n- RV11 (BB11001.msf): Chuỗi phân kỳ cao (< 20% identity)\n- RV12 (BB12001.msf): Chuỗi tương đồng trung bình (20% - 40% identity)"),
+        ("Hệ thống kiểm thử tự động", "107 Unit Tests (139,446 assertions) và 234 End-to-End Tests")
+    ]
+    for i, (k, v) in enumerate(specs):
+        c0, c1 = spec_table.rows[i].cells[0], spec_table.rows[i].cells[1]
+        c0.width = s_col_widths[0]
+        c1.width = s_col_widths[1]
+        set_cell_background(c0, "F1F5F9")
+        p0 = c0.paragraphs[0]
+        p0.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        r0 = p0.add_run(k)
+        r0.bold = True
+        r0.font.color.rgb = RGBColor(16, 44, 87)
+
+        p1 = c1.paragraphs[0]
+        p1.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        for line in v.split('\n'):
+            if line:
+                p1.add_run(line + "\n")
+        # Remove trailing newline
+        if p1.runs and p1.runs[-1].text.endswith('\n'):
+            p1.runs[-1].text = p1.runs[-1].text[:-1]
+
+    doc.add_paragraph().paragraph_format.space_after = Pt(8)
 
     add_h2("5.2. Kết quả Đo đạc Tối ưu Bộ nhớ: Gotoh NW vs Myers-Miller Linear")
     add_p(
@@ -509,28 +733,37 @@ def create_report():
     mem_table.alignment = WD_TABLE_ALIGNMENT.CENTER
     set_table_borders(mem_table)
     m_headers = ["Cặp Chuỗi Thử Nghiệm", "Độ dài (aa)", "Điểm NW Gotoh", "Điểm Myers-Miller", "Đồng nhất Điểm", "Tỷ lệ Giảm Bộ nhớ"]
+    m_widths = [Inches(1.8), Inches(0.9), Inches(0.9), Inches(0.9), Inches(1.0), Inches(1.0)]
+
     for j, h in enumerate(m_headers):
         cell = mem_table.cell(0, j)
+        cell.width = m_widths[j]
         set_cell_background(cell, "102C57")
         p = cell.paragraphs[0]
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         r = p.add_run(h)
         r.bold = True
         r.font.color.rgb = RGBColor(255, 255, 255)
 
     m_data = [
-        ("1aab_ vs 1j46_A (BB11001)", "60 vs 57", "267", "267", "MATCH (100%)", "92.0x ít bộ nhớ hơn"),
-        ("1ivy_A vs 1ymy_ (BB12001)", "65 vs 63", "323", "323", "MATCH (100%)", "99.6x ít bộ nhớ hơn")
+        ("1aab_ vs 1j46_A (BB11001)", "60 vs 57", "267", "267", "MATCH (100%)", "92.0x ít RAM hơn"),
+        ("1ivy_A vs 1ymy_ (BB12001)", "65 vs 63", "323", "323", "MATCH (100%)", "99.6x ít RAM hơn")
     ]
     for i, row in enumerate(m_data):
         for j, val in enumerate(row):
             cell = mem_table.cell(i+1, j)
+            cell.width = m_widths[j]
             if i % 2 == 1:
                 set_cell_background(cell, "F9FBFD")
             p = cell.paragraphs[0]
+            if j == 0:
+                p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            else:
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             r = p.add_run(val)
             if j == 4:
                 r.bold = True
-                r.font.color.rgb = RGBColor(0, 128, 0)
+                r.font.color.rgb = RGBColor(16, 128, 64)
             elif j == 5:
                 r.bold = True
                 r.font.color.rgb = RGBColor(16, 44, 87)
@@ -553,28 +786,38 @@ def create_report():
     bio_table = doc.add_table(rows=3, cols=6)
     bio_table.alignment = WD_TABLE_ALIGNMENT.CENTER
     set_table_borders(bio_table)
-    b_headers = ["Tập Benchmark BAliBASE", "Số Chuỗi", "Độ dài Căn chỉnh", "SP Score (Sum-of-Pairs)", "TC Score (Total Column)", "Đánh giá Sinh học"]
+    b_headers = ["Tập Benchmark BAliBASE", "Số Chuỗi", "Độ dài MSA", "SP Score (Sum-of-Pairs)", "TC Score (Total Column)", "Đánh giá Sinh học"]
+    b_widths = [Inches(1.8), Inches(0.8), Inches(0.9), Inches(1.1), Inches(1.1), Inches(1.4)]
+
     for j, h in enumerate(b_headers):
         cell = bio_table.cell(0, j)
+        cell.width = b_widths[j]
         set_cell_background(cell, "102C57")
         p = cell.paragraphs[0]
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         r = p.add_run(h)
         r.bold = True
         r.font.color.rgb = RGBColor(255, 255, 255)
 
     b_data = [
-        ("RV11 (BB11001.msf)", "4 chuỗi", "60 cột", "0.9405 (316/336 cặp)", "0.9107 (51/56 cột)", "Rất cao trên tập phân kỳ <20%"),
+        ("RV11 (BB11001.msf)", "4 chuỗi", "60 cột", "0.9405 (316/336 cặp)", "0.9107 (51/56 cột)", "Rất cao trên tập phân kỳ < 20%"),
         ("RV12 (BB12001.msf)", "3 chuỗi", "65 cột", "1.0000 (186/186 cặp)", "1.0000 (62/62 cột)", "Hoàn hảo tuyệt đối 100%")
     ]
     for i, row in enumerate(b_data):
         for j, val in enumerate(row):
             cell = bio_table.cell(i+1, j)
+            cell.width = b_widths[j]
             if i % 2 == 1:
                 set_cell_background(cell, "F9FBFD")
             p = cell.paragraphs[0]
+            if j == 0:
+                p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            else:
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             r = p.add_run(val)
             if j in (3, 4):
                 r.bold = True
+                r.font.color.rgb = RGBColor(16, 44, 87)
 
     doc.add_paragraph().paragraph_format.space_after = Pt(8)
 
@@ -588,11 +831,15 @@ def create_report():
     speed_table = doc.add_table(rows=4, cols=6)
     speed_table.alignment = WD_TABLE_ALIGNMENT.CENTER
     set_table_borders(speed_table)
-    s_headers = ["Số Luồng (Threads)", "Thời gian T(p) (ms)", "Tăng tốc Speedup S(p)", "Hiệu suất Efficiency E(p)", "Peak RAM (MB)", "Độ ổn định SP"]
+    s_headers = ["Số Luồng (Threads)", "Thời gian T(p)", "Tăng tốc Speedup", "Hiệu suất E(p)", "Peak RAM (MB)", "Độ ổn định SP"]
+    s_widths = [Inches(1.2), Inches(1.0), Inches(1.1), Inches(1.0), Inches(1.1), Inches(1.1)]
+
     for j, h in enumerate(s_headers):
         cell = speed_table.cell(0, j)
+        cell.width = s_widths[j]
         set_cell_background(cell, "102C57")
         p = cell.paragraphs[0]
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         r = p.add_run(h)
         r.bold = True
         r.font.color.rgb = RGBColor(255, 255, 255)
@@ -605,23 +852,25 @@ def create_report():
     for i, row in enumerate(s_data):
         for j, val in enumerate(row):
             cell = speed_table.cell(i+1, j)
+            cell.width = s_widths[j]
             if i % 2 == 1:
                 set_cell_background(cell, "F9FBFD")
             p = cell.paragraphs[0]
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             p.add_run(val)
 
     doc.add_paragraph().paragraph_format.space_after = Pt(8)
 
     add_h2("5.5. Báo cáo Độ tin cậy và Kiểm thử Tự động")
-    add_p(
-        "Nhóm 5 đã xây dựng hệ thống kiểm thử tự động toàn diện theo chuẩn Continuous Integration:\n"
-        "1. Bộ Unit Tests: Gồm 107 bài test độc lập với 139,446 câu lệnh kiểm tra (assertions). "
-        "Thời gian chạy toàn bộ 107 tests chỉ mất 51.18 mili-giây. Tỷ lệ vượt qua: 107/107 (100% Passed).\n"
-        "2. Bộ End-to-End Tests: Gồm 234 bài test kiểm tra tích hợp toàn bộ pipeline 4 tầng từ đọc file FASTA đến xuất file căn chỉnh. "
-        "Tỷ lệ vượt qua: 234/234 (100% Passed).\n"
-        "3. Kiểm chứng Bảo toàn Sinh học: Mọi chuỗi sau khi căn chỉnh đều được kiểm tra tính bất biến của amino acid (verify residue conservation). "
-        "Không có bất kỳ ký tự nào bị mất mát, biến dạng, hay sinh thêm ngoài ý muốn."
-    )
+    add_p("Nhóm 5 đã xây dựng hệ thống kiểm thử tự động toàn diện theo chuẩn Continuous Integration:")
+    add_bullet("Bộ Unit Tests: Gồm 107 bài test độc lập với 139,446 câu lệnh kiểm tra (assertions). "
+               "Thời gian chạy toàn bộ 107 tests chỉ mất 51.18 mili-giây. Tỷ lệ vượt qua: 107/107 (100% Passed).")
+    add_bullet("Bộ End-to-End Tests: Gồm 234 bài test kiểm tra tích hợp toàn bộ pipeline 4 tầng từ đọc file FASTA đến xuất file căn chỉnh. "
+               "Tỷ lệ vượt qua: 234/234 (100% Passed).")
+    add_bullet("Kiểm chứng Bảo toàn Sinh học: Mọi chuỗi sau khi căn chỉnh đều được kiểm tra tính bất biến của amino acid (verify residue conservation). "
+               "Không có bất kỳ ký tự nào bị mất mát, biến dạng, hay sinh thêm ngoài ý muốn.")
+
+    doc.add_page_break()
 
     # ==========================================
     # CHƯƠNG 6: KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN
@@ -629,24 +878,21 @@ def create_report():
     add_h1("CHƯƠNG 6: KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN")
 
     add_h2("6.1. Kết luận và Thành quả Đạt được")
-    add_p(
-        "Đề tài của Nhóm 5 đã hoàn thành xuất sắc toàn bộ các mục tiêu đặt ra cho môn học Phân tích và Thiết kế Thuật toán:\n"
-        "1. Về mặt Thuật toán: Nắm vững và làm chủ phương pháp Quy hoạch động Gotoh, kỹ thuật Chia để trị Hirschberg / Myers-Miller tuyến tính bộ nhớ, "
-        "thuật toán gom cụm cây UPGMA, và kỹ thuật căn chỉnh profile-to-profile Sum-of-Pairs.\n"
-        "2. Về mặt Tính mới & Đóng góp: Chứng minh và thực nghiệm thành công việc nén không gian trạng thái từ O(mn) về O(min(m, n)) với mức giảm bộ nhớ "
-        "hơn 90 - 250 lần mà không làm suy giảm 1% nào về điểm số tối ưu.\n"
-        "3. Về mặt Tính toán Song song: Song song hóa thành công 2 cấp độ trên OpenMP (All-pairs distance matrix & Tree scheduler progressive alignment).\n"
-        "4. Về mặt Kỹ thuật Phần mềm: Sản phẩm C++17 hoàn chỉnh, kiến trúc module sạch sẽ, ứng dụng dòng lệnh msa_align.exe chuyên nghiệp, "
-        "hệ thống kiểm thử tự động 107 unit tests + 234 E2E tests đạt tỷ lệ đạt 100%."
-    )
+    add_p("Đề tài của Nhóm 5 đã hoàn thành xuất sắc toàn bộ các mục tiêu đặt ra cho môn học Phân tích và Thiết kế Thuật toán:")
+
+    add_bullet("Về mặt Thuật toán: Nắm vững và làm chủ phương pháp Quy hoạch động Gotoh, kỹ thuật Chia để trị Hirschberg / Myers-Miller tuyến tính bộ nhớ, "
+               "thuật toán gom cụm cây UPGMA, và kỹ thuật căn chỉnh profile-to-profile Sum-of-Pairs.")
+    add_bullet("Về mặt Tính mới & Đóng góp: Chứng minh và thực nghiệm thành công việc nén không gian trạng thái từ O(mn) về O(min(m, n)) với mức giảm bộ nhớ "
+               "hơn 90 - 250 lần mà không làm suy giảm 1% nào về điểm số tối ưu.")
+    add_bullet("Về mặt Tính toán Song song: Song song hóa thành công 2 cấp độ trên OpenMP (All-pairs distance matrix & Tree scheduler progressive alignment).")
+    add_bullet("Về mặt Kỹ thuật Phần mềm: Sản phẩm C++17 hoàn chỉnh, kiến trúc module sạch sẽ, ứng dụng dòng lệnh msa_align.exe chuyên nghiệp, "
+               "hệ thống kiểm thử tự động 107 unit tests + 234 E2E tests đạt tỷ lệ đạt 100%.")
 
     add_h2("6.2. Hướng Phát triển Mở rộng")
-    add_p(
-        "Trong tương lai, hệ thống có thể được nâng cấp theo các hướng nghiên cứu chuyên sâu:\n"
-        "- Tối ưu hóa Vector SIMD: Sử dụng chỉ thị AVX2 / AVX-512 (Striped Smith-Waterman / Gotoh) để tính toán đồng thời 16 đến 32 ô ma trận trên thanh ghi vector.\n"
-        "- Tăng tốc phần cứng GPU: Hiện thực kernel Myers-Miller và All-Pairs trên nền tảng CUDA / OpenCL cho phép xử lý hàng vạn chuỗi đồng thời.\n"
-        "- Tinh chỉnh lặp tiến hóa (Iterative Refinement): Áp dụng thuật toán chia cắt cây ngẫu nhiên (tree-splitting) của MUSCLE để tối ưu hóa cục bộ sau bước progressive."
-    )
+    add_p("Trong tương lai, hệ thống có thể được nâng cấp theo các hướng nghiên cứu chuyên sâu:")
+    add_bullet("Tối ưu hóa Vector SIMD: Sử dụng chỉ thị AVX2 / AVX-512 (Striped Smith-Waterman / Gotoh) để tính toán đồng thời 16 đến 32 ô ma trận trên thanh ghi vector.")
+    add_bullet("Tăng tốc phần cứng GPU: Hiện thực kernel Myers-Miller và All-Pairs trên nền tảng CUDA / OpenCL cho phép xử lý hàng vạn chuỗi đồng thời.")
+    add_bullet("Tinh chỉnh lặp tiến hóa (Iterative Refinement): Áp dụng thuật toán chia cắt cây ngẫu nhiên (tree-splitting) của MUSCLE để tối ưu hóa cục bộ sau bước progressive.")
 
     # ==========================================
     # TÀI LIỆU THAM KHẢO
@@ -664,6 +910,7 @@ def create_report():
     ]
     for r in refs:
         p = doc.add_paragraph()
+        p.alignment = WD_ALIGN_PARAGRAPH.LEFT
         p.paragraph_format.space_after = Pt(3)
         p.paragraph_format.line_spacing = 1.15
         p.add_run(r)
@@ -678,10 +925,14 @@ def create_report():
     member_table.alignment = WD_TABLE_ALIGNMENT.CENTER
     set_table_borders(member_table)
     m_cols = ["Thành viên", "Nhiệm vụ Phụ trách", "Sản phẩm / Code Deliverables", "Đánh giá Hoàn thành"]
+    m_widths = [Inches(1.8), Inches(2.2), Inches(1.8), Inches(1.2)]
+
     for j, h in enumerate(m_cols):
         cell = member_table.cell(0, j)
+        cell.width = m_widths[j]
         set_cell_background(cell, "102C57")
         p = cell.paragraphs[0]
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         r = p.add_run(h)
         r.bold = True
         r.font.color.rgb = RGBColor(255, 255, 255)
@@ -696,9 +947,15 @@ def create_report():
     for i, row in enumerate(team_roles):
         for j, val in enumerate(row):
             cell = member_table.cell(i+1, j)
+            cell.width = m_widths[j]
             if i % 2 == 1:
                 set_cell_background(cell, "F9FBFD")
-            cell.paragraphs[0].add_run(val)
+            p = cell.paragraphs[0]
+            if j == 3:
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            else:
+                p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            p.add_run(val)
 
     # Save document
     output_filename = "Bao_Cao_Nhom_5_MSA.docx"
