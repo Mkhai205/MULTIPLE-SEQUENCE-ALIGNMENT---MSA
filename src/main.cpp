@@ -124,7 +124,7 @@ int main(int argc, char* argv[]) {
         if (config.benchmark) {
             std::cout << "\n--- Multi-Threaded Scalability & Accuracy Benchmark ---\n";
             msa::eval::BenchmarkConfig bench_config;
-            bench_config.thread_counts = {1, 2, 4};
+            bench_config.thread_counts = {1, 2, 4, 8};
             bench_config.model = score_model;
             bench_config.repetitions = 2;
 
@@ -167,6 +167,18 @@ int main(int argc, char* argv[]) {
         names.reserve(sequences.size());
         for (const auto& s : sequences) names.push_back(s.id());
         auto guide_tree = msa::tree::UPGMA::buildTree(dist, names);
+
+        if (!config.export_tree_file.empty()) {
+            std::filesystem::path json_path = config.export_tree_file;
+            json_path.replace_extension(".json");
+            std::filesystem::path nwk_path = config.export_tree_file;
+            nwk_path.replace_extension(".nwk");
+
+            guide_tree.writeJson(json_path);
+            guide_tree.writeNewick(nwk_path);
+
+            std::cout << "[INFO] Guide tree exported to: " << json_path << " and " << nwk_path << "\n";
+        }
 
         // Step 4.3: Bottom-up Progressive Alignment
         msa::core::Profile msa_profile;

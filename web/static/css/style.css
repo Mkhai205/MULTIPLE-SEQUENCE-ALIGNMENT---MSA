@@ -1,0 +1,153 @@
+/* Modern MSA Pipeline Studio Custom Styling */
+:root {
+    --bg-dark: #0f172a;
+    --bg-card: #1e293b;
+    --border-color: #334155;
+    --primary-blue: #3b82f6;
+    --accent-cyan: #06b6d4;
+    --accent-emerald: #10b981;
+}
+
+/* Custom modern scrollbars */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #0f172a;
+}
+::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
+
+/* Monospace font for biological alignment */
+.font-mono-seq {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Courier New', monospace;
+    font-feature-settings: "liga" 0;
+}
+
+/* MSA Matrix Grid styling */
+.msa-cell {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    user-select: none;
+    transition: transform 0.1s ease, filter 0.1s ease;
+}
+
+.msa-cell:hover {
+    filter: brightness(1.25);
+    z-index: 10;
+    box-shadow: 0 0 4px rgba(255, 255, 255, 0.4);
+}
+
+/* Biochemical color palettes */
+.aa-hydrophobic {
+    background-color: #1e3a8a !important; /* Blue */
+    color: #93c5fd !important;
+}
+
+.aa-polar {
+    background-color: #064e3b !important; /* Green */
+    color: #6ee7b7 !important;
+}
+
+.aa-positive {
+    background-color: #881337 !important; /* Red / Rose */
+    color: #fda4af !important;
+}
+
+.aa-negative {
+    background-color: #581c87 !important; /* Purple */
+    color: #d8b4fe !important;
+}
+
+.aa-gly-pro {
+    background-color: #78350f !important; /* Amber / Orange */
+    color: #fcd34d !important;
+}
+
+.aa-gap {
+    background-color: #1e293b !important; /* Gray / Slate */
+    color: #64748b !important;
+}
+
+/* Alternate: Hydrophobicity Gradient */
+.aa-hydro-high {
+    background-color: #1d4ed8 !important;
+    color: #eff6ff !important;
+}
+.aa-hydro-med {
+    background-color: #0284c7 !important;
+    color: #f0f9ff !important;
+}
+.aa-hydro-low {
+    background-color: #334155 !important;
+    color: #cbd5e1 !important;
+}
+
+/* Sticky row and column highlights */
+.col-highlight {
+    background-color: rgba(59, 130, 246, 0.25) !important;
+}
+
+/* Tree Dendrogram styling */
+.tree-node circle {
+    fill: #38bdf8;
+    stroke: #0284c7;
+    stroke-width: 2px;
+    cursor: pointer;
+    transition: r 0.2s ease, fill 0.2s ease;
+}
+
+.tree-node circle:hover {
+    fill: #34d399;
+    r: 6px;
+}
+
+.tree-node text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    fill: #e2e8f0;
+}
+
+.tree-link {
+    fill: none;
+    stroke: #64748b;
+    stroke-width: 2px;
+    shape-rendering: crispEdges;
+}
+
+.tree-branch-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    fill: #94a3b8;
+}
+
+/* Histogram bars */
+.histogram-bar {
+    transition: height 0.2s ease;
+}
+
+/* Custom Tooltip */
+.tooltip-custom {
+    position: absolute;
+    z-index: 50;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease-in-out;
+}
+
+/* Pulse animation for running state */
+@keyframes pulse-subtle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+.animate-pulse-subtle {
+    animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

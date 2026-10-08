@@ -170,3 +170,47 @@ TEST_CASE("ProgressiveAlignment - Boundary Cases: 1 and 2 Sequences") {
     CHECK(verifyResidueConservation(pair[0].seq(), prof_pair.getAlignedSequence(0)));
     CHECK(verifyResidueConservation(pair[1].seq(), prof_pair.getAlignedSequence(1)));
 }
+
+TEST_CASE("GuideTree - toNewick and toJson Serialization") {
+    using namespace msa::tree;
+    using namespace msa::core;
+
+    std::vector<Sequence> seqs = {
+        Sequence("seqA", "HEAGAWGHEE"),
+        Sequence("seqB", "HEAGVWGHEE"),
+        Sequence("seqC", "PAWHEAE")
+    };
+
+    auto tree = UPGMA::buildTree(seqs);
+
+    // 1. Verify Newick string
+    std::string nwk = tree.toNewick();
+    CHECK(!nwk.empty());
+    CHECK_EQ(nwk.back(), ';');
+    CHECK(nwk.find("seqA:") != std::string::npos);
+    CHECK(nwk.find("seqB:") != std::string::npos);
+    CHECK(nwk.find("seqC:") != std::string::npos);
+
+    // 2. Verify JSON string
+    std::string json_str = tree.toJson();
+    CHECK(!json_str.empty());
+    CHECK(json_str.find("\"name\": \"seqA\"") != std::string::npos);
+    CHECK(json_str.find("\"name\": \"seqB\"") != std::string::npos);
+    CHECK(json_str.find("\"name\": \"seqC\"") != std::string::npos);
+    CHECK(json_str.find("\"clade_size\": 3") != std::string::npos);
+    CHECK(json_str.find("\"is_leaf\": true") != std::string::npos);
+    CHECK(json_str.find("\"is_leaf\": false") != std::string::npos);
+    CHECK(json_str.find("\"branch_length\":") != std::string::npos);
+
+    // 3. File write and read
+    std::filesystem::path tmp_nwk = std::filesystem::temp_directory_path() / "test_export.nwk";
+    std::filesystem::path tmp_json = std::filesystem::temp_directory_path() / "test_export.json";
+    tree.writeNewick(tmp_nwk);
+    tree.writeJson(tmp_json);
+    CHECK(std::filesystem::exists(tmp_nwk));
+    CHECK(std::filesystem::exists(tmp_json));
+    CHECK(std::filesystem::file_size(tmp_nwk) > 10);
+    CHECK(std::filesystem::file_size(tmp_json) > 50);
+    std::filesystem::remove(tmp_nwk);
+    std::filesystem::remove(tmp_json);
+}

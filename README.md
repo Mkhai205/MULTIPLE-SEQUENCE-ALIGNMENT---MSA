@@ -95,7 +95,38 @@ Các file thực thi sinh ra tại `build/Release/`:
 
 ---
 
-## 5. Hướng dẫn Sử dụng CLI (`msa_align`)
+## 5. Web GUI Dashboard & Trực quan hóa
+
+Hệ thống tích hợp giao diện Single-Page Application (SPA) hiện đại (HTML5, Tailwind CSS, Chart.js, D3/SVG) kết nối với backend Python FastAPI thông qua Subprocess IPC tới `msa_align.exe`.
+
+### Khởi chạy nhanh bằng 1-Click Launcher (Windows):
+Double-click hoặc chạy lệnh:
+```bat
+run_gui.bat
+```
+Script sẽ tự động khởi động máy chủ FastAPI tại `http://localhost:8000` và mở trình duyệt mặc định.
+
+### Các module chức năng trên giao diện Web:
+1. **Input & Control Panel**:
+   - 4 Demo Presets có sẵn: BAliBASE RV11 (`BB11001.msf`), BAliBASE RV12 (`BB12001.msf`), Gia đình Hemoglobin, và Test kiểm tra bộ nhớ chuỗi dài (~900 aa).
+   - Hỗ trợ Kéo & thả file (.fasta, .fa, .msf) và dán trực tiếp sequence.
+   - Thanh trượt tùy chỉnh số luồng OpenMP (1, 2, 4, 8), Gap Open (-10), Gap Extend (-1).
+   - Tùy chọn chế độ: Standard Alignment, Baseline Comparison, Multi-threaded Benchmark.
+2. **Interactive Color-Coded MSA Matrix (Jalview / ClustalX style)**:
+   - Mã màu hóa học các amino acid (Kỵ nước: Xanh lam, Phân cực: Xanh lá, Điện tích dương: Đỏ, Điện tích âm: Tím, Gly/Pro: Cam, Khoảng trống: Xám).
+   - Thanh thước đo vị trí (1, 10, 20...), cuộn ngang mượt mà, hàng Consensus sequence và Biểu đồ cột mức độ bảo tồn (Conservation Histogram).
+3. **UPGMA Guide Tree Visualizer**:
+   - Cây phát sinh loài UPGMA tương tác dạng SVG Dendrogram, hiển thị khoảng cách tiến hóa trên từng nhánh, nhãn sequence lá và phóng to/thu nhỏ/pan.
+4. **Benchmark & Analytics Dashboard**:
+   - Đồ thị Tăng tốc Speedup $S(p)$ và Hiệu suất $E(p)$ tương tác (Chart.js) trên 1, 2, 4, 8 luồng.
+   - Thẻ so sánh bộ nhớ: Gotoh $O(mn)$ vs Myers-Miller $O(\min(m, n))$ (tiết kiệm hơn 1.350x bộ nhớ).
+   - Thẻ đánh giá độ chính xác sinh học BAliBASE (SP Score & TC Score).
+5. **Export Studio**:
+   - Xuất file FASTA đã căn chỉnh, file Newick (`.nwk`), ảnh vector SVG cây chỉ dẫn, và báo cáo JSON benchmark.
+
+---
+
+## 6. Hướng dẫn Sử dụng CLI (`msa_align`)
 
 ### Các tùy chọn tham số:
 ```text
@@ -104,6 +135,7 @@ Cú pháp: msa_align [OPTIONS] --input <FILE>
 Tùy chọn:
   -i, --input <FILE>           Đường dẫn file đầu vào (.fa, .fasta, .msf) [BẮT BUỘC]
   -o, --output <FILE>          Đường dẫn file FASTA kết quả căn chỉnh
+      --export-tree <FILE>     Xuất cây UPGMA sang Newick (.nwk) hoặc JSON (.json)
   -t, --threads <NUM>          Số luồng OpenMP xử lý song song [mặc định: 1]
       --gap-open <NUM>         Điểm phạt mở khoảng trống (affine gap open) [mặc định: -10]
       --gap-extend <NUM>       Điểm phạt mở rộng khoảng trống (gap extend) [mặc định: -1]

@@ -13,6 +13,7 @@ namespace msa::io {
 struct CliConfig {
     std::filesystem::path input_file;
     std::filesystem::path output_file;
+    std::filesystem::path export_tree_file;
     int num_threads = 1;
     int gap_open = -10;
     int gap_extend = -1;

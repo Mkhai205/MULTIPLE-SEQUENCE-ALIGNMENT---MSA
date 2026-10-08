@@ -85,6 +85,8 @@ CliConfig CliParser::parse(int argc, const char* const argv[], bool validate_fil
             config.input_file = std::string(get_value(key));
         } else if (key == "-o" || key == "--output") {
             config.output_file = std::string(get_value(key));
+        } else if (key == "--export-tree" || key == "--tree-out") {
+            config.export_tree_file = std::string(get_value(key));
         } else if (key == "-t" || key == "--threads") {
             config.num_threads = parse_int(key, get_value(key), 1, 256);
         } else if (key == "--gap-open") {
@@ -133,6 +135,7 @@ std::string CliParser::format_help() const {
     ss << "OPTIONS:\n";
     ss << "  -i, --input <FILE>           Path to input FASTA file containing protein sequences (REQUIRED)\n";
     ss << "  -o, --output <FILE>          Path to output aligned FASTA file [default: stdout or <input>.aln.fa]\n";
+    ss << "      --export-tree <FILE>     Export UPGMA guide tree in Newick format (.nwk) or JSON (.json)\n";
     ss << "  -t, --threads <NUM>          Number of OpenMP worker threads [default: 1]\n";
     ss << "      --gap-open <NUM>         Affine gap open penalty [default: -10]\n";
     ss << "      --gap-extend <NUM>       Affine gap extension penalty [default: -1]\n";

@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <filesystem>
 
 namespace msa::tree {
 
@@ -39,6 +40,12 @@ public:
 
     // Traversal helpers
     void postOrderTraversal(const std::function<void(const GuideTreeNode&)>& visitor) const;
+
+    // Tree export methods
+    [[nodiscard]] std::string toNewick() const;
+    [[nodiscard]] std::string toJson() const;
+    void writeNewick(const std::filesystem::path& path) const;
+    void writeJson(const std::filesystem::path& path) const;
 
     // Progressive Multiple Sequence Alignment using bottom-up ProfileAligner
     [[nodiscard]] core::Profile progressiveAlign(
