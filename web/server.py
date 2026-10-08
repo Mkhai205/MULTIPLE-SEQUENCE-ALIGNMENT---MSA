@@ -16,6 +16,8 @@ from pydantic import BaseModel, Field
 
 # Determine project paths
 BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
 BUILD_DIR = BASE_DIR / "build" / "Release"
 EXE_PATH = BUILD_DIR / "msa_align.exe"
 DATA_DIR = BASE_DIR / "data"
@@ -467,4 +469,6 @@ if STATIC_DIR.exists():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("web.server:app", host="127.0.0.1", port=8000, reload=True)
+    if str(BASE_DIR) not in sys.path:
+        sys.path.insert(0, str(BASE_DIR))
+    uvicorn.run(app, host="127.0.0.1", port=8000)

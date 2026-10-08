@@ -99,11 +99,22 @@ Các file thực thi sinh ra tại `build/Release/`:
 
 Hệ thống tích hợp giao diện Single-Page Application (SPA) hiện đại (HTML5, Tailwind CSS, Chart.js, D3/SVG) kết nối với backend Python FastAPI thông qua Subprocess IPC tới `msa_align.exe`.
 
-### Khởi chạy nhanh bằng 1-Click Launcher (Windows):
-Double-click hoặc chạy lệnh:
-```bat
-run_gui.bat
-```
+### Khởi chạy nhanh Web GUI:
+- **Trên Windows Command Prompt / PowerShell**:
+  ```cmd
+  run_gui.bat
+  ```
+  *(hoặc trong PowerShell: `.\run_gui.bat`)*
+- **Trên Git Bash / MinGW / WSL / Linux**:
+  ```bash
+  ./run_gui.sh
+  # hoặc:
+  bash run_gui.sh
+  ```
+- **Khởi chạy trực tiếp bằng Python**:
+  ```bash
+  python web/server.py
+  ```
 Script sẽ tự động khởi động máy chủ FastAPI tại `http://localhost:8000` và mở trình duyệt mặc định.
 
 ### Các module chức năng trên giao diện Web:

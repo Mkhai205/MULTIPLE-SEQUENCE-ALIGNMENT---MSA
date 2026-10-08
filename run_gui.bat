@@ -45,5 +45,5 @@ echo [INFO] Opening default web browser...
 :: Open user's default browser after server initializes (use ping delay to avoid redirection errors)
 start "" /b cmd /c "ping 127.0.0.1 -n 3 >nul & start http://localhost:8000"
 
-:: Launch uvicorn server
-python -m uvicorn web.server:app --host 127.0.0.1 --port 8000
+:: Launch server
+python web/server.py
