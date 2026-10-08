@@ -105,6 +105,15 @@ PRESETS_MAP: Dict[str, Dict[str, Any]] = {
         "path": DATA_DIR / "presets" / "benchmark_20seqs.fa",
         "filename": "benchmark_20seqs.fa",
         "format": "fasta"
+    },
+    "large_40": {
+        "id": "large_40",
+        "name": "Bacterial 40-Seq Benchmark",
+        "description": "40 homologous bacterial protein sequences (~450 aa) from eggNOG. 780 pairwise alignments demonstrating strong multi-core scalability.",
+        "category": "Scalability & OpenMP Benchmark",
+        "path": DATA_DIR / "presets" / "benchmark_40seqs.fa",
+        "filename": "benchmark_40seqs.fa",
+        "format": "fasta"
     }
 }
 
