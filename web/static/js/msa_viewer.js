@@ -25,37 +25,28 @@ class MsaViewer {
         this.container.innerHTML = `
             <div class="flex flex-col h-full bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
                 <!-- Toolbar -->
-                <div class="flex flex-wrap items-center justify-between px-4 py-2 bg-slate-800/80 border-b border-slate-700/60 text-xs text-slate-300 gap-3">
-                    <div class="flex items-center gap-4">
+                <div class="flex flex-wrap items-center justify-between px-3.5 py-1.5 bg-slate-800/80 border-b border-slate-700/60 text-xs text-slate-300 gap-2">
+                    <div class="flex items-center gap-2">
                         <span class="font-semibold text-slate-200 flex items-center gap-1.5">
-                            <i class="fa-solid fa-table-cells text-indigo-400"></i> Alignment Matrix
+                            <i class="fa-solid fa-table-cells text-indigo-400"></i> Matrix
                         </span>
-                        <span id="msa-stats-badge" class="px-2 py-0.5 rounded bg-slate-700 text-slate-300 font-mono">0 seqs × 0 cols</span>
+                        <span id="msa-stats-badge" class="px-2 py-0.5 rounded bg-slate-950 text-slate-300 font-mono text-[11px] border border-slate-800">0 seqs × 0 cols</span>
+                        <span id="msa-time-badge" class="hidden px-2 py-0.5 rounded bg-slate-950 text-cyan-400 font-mono text-[11px] border border-slate-800"><i class="fa-solid fa-stopwatch mr-1"></i>--</span>
+                        <span id="msa-mem-badge" class="hidden px-2 py-0.5 rounded bg-slate-950 text-emerald-400 font-mono text-[11px] border border-slate-800"><i class="fa-solid fa-microchip mr-1"></i>--</span>
                     </div>
 
-                    <div class="flex items-center flex-wrap gap-3">
+                    <div class="flex items-center flex-wrap gap-2.5">
                         <!-- Search Motif -->
                         <div class="relative">
-                            <input id="msa-search-input" type="text" placeholder="Find motif (e.g. WKTM)..."
-                                class="bg-slate-900 text-slate-200 text-xs px-2.5 py-1 pl-7 rounded border border-slate-700 focus:outline-none focus:border-blue-500 font-mono uppercase w-44" />
-                            <i class="fa-solid fa-magnifying-glass absolute left-2 top-2 text-slate-500 text-xs"></i>
-                        </div>
-
-                        <!-- Color Scheme Select -->
-                        <div class="flex items-center gap-1.5">
-                            <label class="text-slate-400 font-medium">Palette:</label>
-                            <select id="msa-scheme-select" class="bg-slate-900 text-slate-200 text-xs px-2 py-1 rounded border border-slate-700 focus:outline-none focus:border-blue-500">
-                                <option value="clustal">ClustalX / Biochemical</option>
-                                <option value="hydrophobic">Hydrophobicity</option>
-                                <option value="conservation">Conservation Highlight</option>
-                                <option value="mono">Monochrome</option>
-                            </select>
+                            <input id="msa-search-input" type="text" placeholder="Search motif..."
+                                class="bg-slate-900 text-slate-200 text-xs px-2 py-0.5 pl-6 rounded border border-slate-700 focus:outline-none focus:border-blue-500 font-mono uppercase w-36" />
+                            <i class="fa-solid fa-magnifying-glass absolute left-2 top-1.5 text-slate-500 text-[10px]"></i>
                         </div>
 
                         <!-- Zoom Slider -->
-                        <div class="flex items-center gap-1.5">
-                            <label class="text-slate-400 font-medium"><i class="fa-solid fa-magnifying-glass-plus"></i></label>
-                            <input id="msa-zoom-slider" type="range" min="14" max="28" value="20" class="w-20 accent-blue-500 cursor-pointer" />
+                        <div class="flex items-center gap-1">
+                            <i class="fa-solid fa-magnifying-glass-plus text-slate-400 text-xs"></i>
+                            <input id="msa-zoom-slider" type="range" min="14" max="28" value="20" class="w-16 accent-blue-500 cursor-pointer" />
                         </div>
                     </div>
                 </div>
@@ -176,6 +167,27 @@ class MsaViewer {
         this.render();
     }
 
+    setExecutionMetrics(timeMs, memMb) {
+        const timeBadge = document.getElementById('msa-time-badge');
+        if (timeBadge) {
+            if (timeMs !== undefined && timeMs !== null && !isNaN(timeMs)) {
+                timeBadge.innerHTML = `<i class="fa-solid fa-stopwatch mr-1"></i>${Number(timeMs).toFixed(1)} ms`;
+                timeBadge.classList.remove('hidden');
+            } else {
+                timeBadge.classList.add('hidden');
+            }
+        }
+        const memBadge = document.getElementById('msa-mem-badge');
+        if (memBadge) {
+            if (memMb !== undefined && memMb !== null && !isNaN(memMb)) {
+                memBadge.innerHTML = `<i class="fa-solid fa-microchip mr-1"></i>${Number(memMb).toFixed(2)} MB`;
+                memBadge.classList.remove('hidden');
+            } else {
+                memBadge.classList.add('hidden');
+            }
+        }
+    }
+
     clear() {
         this.sequences = [];
         this.alignmentLength = 0;
@@ -184,6 +196,10 @@ class MsaViewer {
 
         const badge = document.getElementById('msa-stats-badge');
         if (badge) badge.textContent = `0 seqs × 0 cols`;
+        const timeBadge = document.getElementById('msa-time-badge');
+        if (timeBadge) timeBadge.classList.add('hidden');
+        const memBadge = document.getElementById('msa-mem-badge');
+        if (memBadge) memBadge.classList.add('hidden');
 
         document.getElementById('msa-names-list').innerHTML = '';
         document.getElementById('msa-ruler-row').innerHTML = '';

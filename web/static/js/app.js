@@ -1,5 +1,5 @@
 /**
- * MSA Pipeline Studio - Main Application Controller
+ * MSA Pipeline Studio - Streamlined Main Controller
  */
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Initialize Core Viewers
@@ -13,15 +13,21 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentTreeJson = null;
     let currentBenchmarkJson = null;
     let selectedPresetId = null;
+    let currentMode = 'standard';
 
     // UI Elements
     const rawTextInput = document.getElementById('raw-seq-input');
-    const dropZone = document.getElementById('file-drop-zone');
+    const dropIndicator = document.getElementById('drop-indicator');
     const fileUploadInput = document.getElementById('file-upload-input');
     const runBtn = document.getElementById('run-align-btn');
     const resetBtn = document.getElementById('reset-btn');
     const statusDot = document.getElementById('engine-status-dot');
     const statusText = document.getElementById('engine-status-text');
+
+    // Export Buttons
+    const exportFastaBtn = document.getElementById('export-download-fasta');
+    const exportNwkBtn = document.getElementById('export-download-nwk');
+    const exportSvgBtn = document.getElementById('export-download-svg');
 
     // Parameter Elements
     const threadsSlider = document.getElementById('threads-slider');
@@ -30,14 +36,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const gapOpenVal = document.getElementById('gap-open-val');
     const gapExtendSlider = document.getElementById('gap-extend-slider');
     const gapExtendVal = document.getElementById('gap-extend-val');
-    const modeSelects = document.querySelectorAll('input[name="align-mode"]');
 
-    // Metrics Elements
-    const metricTime = document.getElementById('metric-time');
-    const metricMem = document.getElementById('metric-mem');
-    const metricSeqs = document.getElementById('metric-seqs');
-    const metricLen = document.getElementById('metric-len');
-    const metricSp = document.getElementById('metric-sp');
+    // Mode Buttons
+    const modeBtnStandard = document.getElementById('mode-btn-standard');
+    const modeBtnBenchmark = document.getElementById('mode-btn-benchmark');
+
+    // Drawer Elements
+    const logsDrawer = document.getElementById('logs-drawer');
+    const logsBackdrop = document.getElementById('logs-drawer-backdrop');
+    const logsContent = document.getElementById('logs-drawer-content');
+    const btnOpenLogs = document.getElementById('btn-open-logs');
+    const btnCloseLogs = document.getElementById('btn-close-logs');
+    const btnCopyLogs = document.getElementById('btn-copy-logs');
+    const stdoutOutput = document.getElementById('raw-stdout-output');
 
     // 2. Health Check
     async function checkEngineHealth() {
@@ -45,22 +56,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/api/health');
             const data = await res.json();
             if (data.executable_found) {
-                statusDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse';
-                statusText.textContent = 'Engine Online (C++17 Release)';
+                statusDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+                statusText.textContent = 'Engine Online';
             } else {
-                statusDot.className = 'w-2.5 h-2.5 rounded-full bg-rose-500';
-                statusText.textContent = 'Engine Offline (Binary not found)';
+                statusDot.className = 'w-2 h-2 rounded-full bg-rose-500';
+                statusText.textContent = 'Binary Missing';
             }
         } catch (e) {
-            statusDot.className = 'w-2.5 h-2.5 rounded-full bg-rose-500';
-            statusText.textContent = 'Backend Offline';
+            statusDot.className = 'w-2 h-2 rounded-full bg-rose-500';
+            statusText.textContent = 'Offline';
         }
     }
     checkEngineHealth();
 
-    // 3. Load Presets
+    // 3. Load Presets as Compact Chips
     async function loadPresets() {
-        const presetsContainer = document.getElementById('presets-list');
+        const presetsContainer = document.getElementById('presets-chips');
         if (!presetsContainer) return;
 
         try {
@@ -70,14 +81,21 @@ document.addEventListener('DOMContentLoaded', () => {
             presetsContainer.innerHTML = '';
             presets.forEach(p => {
                 const btn = document.createElement('button');
-                btn.className = `preset-btn p-3 rounded-lg border text-left transition-all flex flex-col justify-between bg-slate-900/90 border-slate-700/80 hover:border-blue-500 hover:bg-slate-800/80 group`;
+                btn.type = 'button';
+                btn.className = `preset-chip py-1.5 px-2 rounded-lg text-xs font-medium border text-left transition-all bg-slate-950/70 border-slate-800 hover:border-blue-500 hover:bg-slate-800/80 text-slate-300 flex items-center justify-between group`;
                 btn.dataset.id = p.id;
+                btn.title = p.description;
+
+                // Short chip label
+                let shortName = p.name;
+                if (p.id === 'rv11') shortName = 'RV11 (BAliBASE)';
+                else if (p.id === 'rv12') shortName = 'RV12 (BAliBASE)';
+                else if (p.id === 'hemoglobin') shortName = 'Hemoglobin';
+                else if (p.id === 'long_seq') shortName = 'Long Seq (Stress)';
+
                 btn.innerHTML = `
-                    <div class="flex items-center justify-between w-full mb-1">
-                        <span class="text-xs font-bold text-slate-200 group-hover:text-blue-400 transition-colors">${p.name}</span>
-                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">${p.format.toUpperCase()}</span>
-                    </div>
-                    <p class="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">${p.description}</p>
+                    <span class="truncate font-semibold text-[11px] group-hover:text-blue-400">${shortName}</span>
+                    <span class="text-[9px] font-mono text-slate-500 ml-1 uppercase">${p.format}</span>
                 `;
 
                 btn.addEventListener('click', () => selectPreset(p.id));
@@ -92,12 +110,12 @@ document.addEventListener('DOMContentLoaded', () => {
     async function selectPreset(presetId) {
         selectedPresetId = presetId;
 
-        // Highlight preset button
-        document.querySelectorAll('.preset-btn').forEach(b => {
+        // Highlight active preset chip
+        document.querySelectorAll('.preset-chip').forEach(b => {
             if (b.dataset.id === presetId) {
-                b.classList.add('border-blue-500', 'bg-blue-950/30', 'ring-1', 'ring-blue-500');
+                b.classList.add('border-blue-500', 'bg-blue-950/40', 'text-blue-300');
             } else {
-                b.classList.remove('border-blue-500', 'bg-blue-950/30', 'ring-1', 'ring-blue-500');
+                b.classList.remove('border-blue-500', 'bg-blue-950/40', 'text-blue-300');
             }
         });
 
@@ -107,13 +125,12 @@ document.addEventListener('DOMContentLoaded', () => {
             rawTextInput.value = data.content;
             updateInputStats();
 
-            // Set appropriate mode recommendation only for long_seq stress test
+            // Set recommended mode for long_seq
             if (presetId === 'long_seq') {
-                const baselineRadio = document.querySelector('input[name="align-mode"][value="baseline"]');
-                if (baselineRadio) baselineRadio.checked = true;
+                setMode('benchmark');
             }
 
-            showToast(`Loaded preset: ${data.name}`);
+            showToast(`Loaded ${data.name}`);
         } catch (e) {
             showToast(`Failed to load preset ${presetId}`, true);
         }
@@ -126,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!statsEl) return;
 
         if (!text) {
-            statsEl.textContent = '0 sequences detected';
+            statsEl.textContent = '0 seqs';
             return;
         }
 
@@ -139,97 +156,117 @@ document.addEventListener('DOMContentLoaded', () => {
             seqCount = matches ? matches.length : 0;
         }
 
-        statsEl.textContent = `${seqCount} sequence${seqCount === 1 ? '' : 's'} detected`;
+        statsEl.textContent = `${seqCount} seq${seqCount === 1 ? '' : 's'}`;
     }
+
     rawTextInput.addEventListener('input', () => {
         selectedPresetId = null;
-        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('border-blue-500', 'bg-blue-950/30', 'ring-1', 'ring-blue-500'));
+        document.querySelectorAll('.preset-chip').forEach(b => {
+            b.classList.remove('border-blue-500', 'bg-blue-950/40', 'text-blue-300');
+        });
         updateInputStats();
     });
 
-    // 5. Drag and Drop File Handlers
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, (e) => {
-            e.preventDefault();
-            e.stopPropagation();
+    // 5. Drag and Drop directly on Textarea
+    if (rawTextInput && dropIndicator) {
+        ['dragenter', 'dragover'].forEach(eventName => {
+            rawTextInput.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropIndicator.classList.remove('opacity-0');
+            });
         });
-    });
 
-    ['dragenter', 'dragover'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => dropZone.classList.add('border-blue-500', 'bg-slate-800/80'));
-    });
+        ['dragleave', 'drop'].forEach(eventName => {
+            rawTextInput.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropIndicator.classList.add('opacity-0');
+            });
+        });
 
-    ['dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => dropZone.classList.remove('border-blue-500', 'bg-slate-800/80'));
-    });
+        rawTextInput.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files && files.length > 0) {
+                loadFile(files[0]);
+            }
+        });
+    }
 
-    dropZone.addEventListener('drop', (e) => {
-        const files = e.dataTransfer.files;
-        if (files && files.length > 0) {
-            handleFileUpload(files[0]);
-        }
-    });
-
-    dropZone.addEventListener('click', () => fileUploadInput.click());
-    fileUploadInput.addEventListener('change', () => {
+    fileUploadInput?.addEventListener('change', () => {
         if (fileUploadInput.files && fileUploadInput.files.length > 0) {
-            handleFileUpload(fileUploadInput.files[0]);
+            loadFile(fileUploadInput.files[0]);
         }
     });
 
-    function handleFileUpload(file) {
+    function loadFile(file) {
         const reader = new FileReader();
         reader.onload = (e) => {
             rawTextInput.value = e.target.result;
             selectedPresetId = null;
-            document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('border-blue-500', 'bg-blue-950/30', 'ring-1', 'ring-blue-500'));
+            document.querySelectorAll('.preset-chip').forEach(b => {
+                b.classList.remove('border-blue-500', 'bg-blue-950/40', 'text-blue-300');
+            });
             updateInputStats();
-            showToast(`Uploaded file: ${file.name}`);
+            showToast(`Uploaded: ${file.name}`);
         };
         reader.readAsText(file);
     }
 
-    // 6. Parameter Controls
-    threadsSlider.addEventListener('input', () => {
-        threadsVal.textContent = `${threadsSlider.value} T`;
+    // 6. Mode Switcher (Standard vs Benchmark)
+    function setMode(mode) {
+        currentMode = mode;
+        if (mode === 'standard') {
+            modeBtnStandard.classList.add('active');
+            modeBtnBenchmark.classList.remove('active');
+        } else {
+            modeBtnBenchmark.classList.add('active');
+            modeBtnStandard.classList.remove('active');
+        }
+        // Sync radio input for backward compatibility
+        const radio = document.querySelector(`input[name="align-mode"][value="${mode}"]`);
+        if (radio) radio.checked = true;
+    }
+
+    modeBtnStandard?.addEventListener('click', () => setMode('standard'));
+    modeBtnBenchmark?.addEventListener('click', () => setMode('benchmark'));
+
+    // 7. Parameters Sliders
+    threadsSlider?.addEventListener('input', () => {
+        const val = threadsSlider.value;
+        threadsVal.textContent = `${val} Thread${val > 1 ? 's' : ''}`;
     });
 
-    gapOpenSlider.addEventListener('input', () => {
+    gapOpenSlider?.addEventListener('input', () => {
         gapOpenVal.textContent = gapOpenSlider.value;
     });
 
-    gapExtendSlider.addEventListener('input', () => {
+    gapExtendSlider?.addEventListener('input', () => {
         gapExtendVal.textContent = gapExtendSlider.value;
     });
 
-    // Quick thread pills
-    document.querySelectorAll('.thread-pill').forEach(pill => {
-        pill.addEventListener('click', () => {
-            threadsSlider.value = pill.dataset.val;
-            threadsVal.textContent = `${pill.dataset.val} T`;
-        });
-    });
-
-    // 7. Tab Switching
+    // 8. Tab Navigation (3 Tabs)
     const tabs = document.querySelectorAll('.tab-btn');
     const tabPanels = document.querySelectorAll('.tab-panel');
 
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            tabs.forEach(t => t.classList.remove('active', 'border-blue-500', 'text-blue-400'));
+            tabs.forEach(t => {
+                t.classList.remove('active', 'border-blue-500', 'text-blue-400');
+                t.classList.add('border-transparent', 'text-slate-400');
+            });
             tabPanels.forEach(p => p.classList.add('hidden'));
 
             tab.classList.add('active', 'border-blue-500', 'text-blue-400');
+            tab.classList.remove('border-transparent', 'text-slate-400');
+
             const targetId = tab.dataset.target;
             const targetPanel = document.getElementById(targetId);
             if (targetPanel) {
                 targetPanel.classList.remove('hidden');
-                // Trigger chart or tree resize if active
                 if (targetId === 'tab-tree') {
                     setTimeout(() => {
                         treeViewer.fitToScreen();
                         treeViewer.render();
-                    }, 30);
+                    }, 40);
                 }
             }
         });
@@ -240,25 +277,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tabBtn) tabBtn.click();
     }
 
-    // 8. Run Alignment Action
+    // 9. Run Alignment Pipeline
     runBtn.addEventListener('click', async () => {
         const text = rawTextInput.value.trim();
         if (!text && !selectedPresetId) {
-            showToast('Please paste sequences, drop a file, or pick a demo preset.', true);
+            showToast('Please enter sequences or select a quick preset.', true);
             return;
         }
-
-        // Get Mode
-        let mode = 'standard';
-        modeSelects.forEach(radio => {
-            if (radio.checked) mode = radio.value;
-        });
 
         const threads = parseInt(threadsSlider.value, 10);
         const gapOpen = parseInt(gapOpenSlider.value, 10);
         const gapExtend = parseInt(gapExtendSlider.value, 10);
 
-        // UI Loading state
         setRunningState(true);
 
         const payload = {
@@ -267,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
             threads: threads,
             gap_open: gapOpen,
             gap_extend: gapExtend,
-            mode: mode,
+            mode: currentMode,
             export_tree: true
         };
 
@@ -285,7 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await res.json();
             handleAlignmentResults(data);
-            showToast('Alignment execution completed successfully!');
+            showToast('Alignment completed successfully!');
         } catch (e) {
             console.error('Execution error:', e);
             showToast(e.message, true);
@@ -297,11 +327,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function setRunningState(isRunning) {
         if (isRunning) {
             runBtn.disabled = true;
-            runBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i> Computing Alignment...`;
+            runBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Running...`;
             runBtn.classList.add('opacity-75');
         } else {
             runBtn.disabled = false;
-            runBtn.innerHTML = `<i class="fa-solid fa-play mr-2"></i> Run Alignment Pipeline`;
+            runBtn.innerHTML = `<i class="fa-solid fa-play mr-1.5"></i> Run Alignment`;
             runBtn.classList.remove('opacity-75');
         }
     }
@@ -312,51 +342,46 @@ document.addEventListener('DOMContentLoaded', () => {
         currentTreeJson = data.tree || null;
         currentBenchmarkJson = data.benchmark_data || null;
 
-        // 1. Update Metrics Strip
-        const metrics = data.metrics || {};
-        metricTime.textContent = metrics.execution_time_ms ? `${metrics.execution_time_ms.toFixed(2)} ms` : '--';
-        metricMem.textContent = metrics.peak_memory_mb ? `${metrics.peak_memory_mb.toFixed(2)} MB` : '--';
-        metricSeqs.textContent = metrics.num_sequences ? `${metrics.num_sequences} seqs` : `${data.aligned_sequences?.length || '--'}`;
-        metricLen.textContent = metrics.alignment_length ? `${metrics.alignment_length} cols` : '--';
-
-        if (metrics.sp_score !== undefined) {
-            metricSp.textContent = `${metrics.sp_score.toFixed(4)}`;
-        } else if (data.baseline_comparison) {
-            metricSp.textContent = `${data.baseline_comparison.memory_reduction_ratio?.toFixed(1)}x mem`;
-        } else {
-            metricSp.textContent = '--';
-        }
-
-        // 2. Load Alignment Matrix
+        // 1. Load Alignment Matrix
         if (data.aligned_sequences && data.aligned_sequences.length > 0) {
             msaViewer.loadAlignment(data.aligned_sequences);
+            // Update time and memory in matrix toolbar
+            const timeMs = data.metrics?.execution_time_ms;
+            const memMb = data.metrics?.peak_memory_mb;
+            msaViewer.setExecutionMetrics(timeMs, memMb);
         }
 
-        // 3. Load Guide Tree
+        // 2. Load Guide Tree
         if (data.tree) {
             treeViewer.loadTree(data.tree, data.tree_newick);
         }
 
-        // 4. Render Benchmark and Analytics
-        benchDashboard.renderBenchmark(data.benchmark_data, data.baseline_comparison, metrics);
+        // 3. Render Benchmark Dashboard
+        benchDashboard.renderBenchmark(data.benchmark_data, data.baseline_comparison, data.metrics);
 
-        // 5. Update Raw Logs
-        const logsEl = document.getElementById('raw-stdout-output');
-        if (logsEl) {
-            logsEl.textContent = data.stdout + (data.stderr ? `\n--- STDERR ---\n${data.stderr}` : '');
+        // 4. Update Logs in Drawer
+        if (stdoutOutput) {
+            stdoutOutput.textContent = data.stdout + (data.stderr ? `\n--- STDERR ---\n${data.stderr}` : '');
         }
 
-        // Automatic smart tab switch
-        if (data.mode === 'benchmark') {
-            switchTab('tab-benchmarks');
-        } else if (data.mode === 'baseline') {
+        // 5. Enable 1-Click Header Export buttons
+        setExportButtonsEnabled(true);
+
+        // 6. Automatic Smart Tab Switch
+        if (data.mode === 'benchmark' || data.mode === 'baseline') {
             switchTab('tab-benchmarks');
         } else {
             switchTab('tab-matrix');
         }
     }
 
-    // 9. Reset Handler
+    function setExportButtonsEnabled(enabled) {
+        if (exportFastaBtn) exportFastaBtn.disabled = !enabled;
+        if (exportNwkBtn) exportNwkBtn.disabled = !enabled;
+        if (exportSvgBtn) exportSvgBtn.disabled = !enabled;
+    }
+
+    // 10. Reset Workspace
     resetBtn.addEventListener('click', () => {
         rawTextInput.value = '';
         selectedPresetId = null;
@@ -365,66 +390,42 @@ document.addEventListener('DOMContentLoaded', () => {
         currentTreeJson = null;
         currentBenchmarkJson = null;
 
-        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('border-blue-500', 'bg-blue-950/30', 'ring-1', 'ring-blue-500'));
+        document.querySelectorAll('.preset-chip').forEach(b => {
+            b.classList.remove('border-blue-500', 'bg-blue-950/40', 'text-blue-300');
+        });
         updateInputStats();
-
-        metricTime.textContent = '--';
-        metricMem.textContent = '--';
-        metricSeqs.textContent = '--';
-        metricLen.textContent = '--';
-        metricSp.textContent = '--';
 
         msaViewer.clear();
         treeViewer.clear();
         benchDashboard.clear();
-        document.getElementById('raw-stdout-output').textContent = 'No logs yet.';
 
-        showToast('Reset workspace state.');
+        if (stdoutOutput) stdoutOutput.textContent = 'No logs yet. Run an alignment to view output.';
+        setExportButtonsEnabled(false);
+
+        showToast('Workspace reset.');
     });
 
-    // 10. Export Studio Handlers
-    document.getElementById('export-download-fasta')?.addEventListener('click', () => {
-        if (!currentAlignedFasta) return showToast('No aligned sequences to download.', true);
-        downloadFile('msa_aligned.fasta', currentAlignedFasta, 'text/plain');
+    // 11. 1-Click Header Export Downloads
+    exportFastaBtn?.addEventListener('click', () => {
+        if (!currentAlignedFasta) return showToast('No alignment data available.', true);
+        downloadFile('aligned.fasta', currentAlignedFasta, 'text/plain');
+        showToast('Downloaded aligned.fasta');
     });
 
-    document.getElementById('export-download-nwk')?.addEventListener('click', () => {
-        if (!currentNewick) return showToast('No guide tree to download.', true);
-        downloadFile('msa_guide_tree.nwk', currentNewick, 'text/plain');
+    exportNwkBtn?.addEventListener('click', () => {
+        if (!currentNewick) return showToast('No guide tree available.', true);
+        downloadFile('guide_tree.nwk', currentNewick, 'text/plain');
+        showToast('Downloaded guide_tree.nwk');
     });
 
-    document.getElementById('export-download-svg')?.addEventListener('click', () => {
-        if (!treeViewer || !treeViewer.treeData) return showToast('No guide tree to export as SVG.', true);
+    exportSvgBtn?.addEventListener('click', () => {
+        if (!treeViewer || !treeViewer.treeData) return showToast('No tree image available.', true);
         treeViewer.downloadSvg();
+        showToast('Downloaded guide_tree.svg');
     });
 
-    document.getElementById('export-download-json')?.addEventListener('click', () => {
-        if (!currentBenchmarkJson && !currentTreeJson && msaViewer.sequences.length === 0) {
-            return showToast('No benchmark or alignment data to download.', true);
-        }
-        const report = {
-            benchmark: currentBenchmarkJson,
-            tree: currentTreeJson,
-            alignment_sequences_count: msaViewer.sequences.length,
-            alignment_length: msaViewer.alignmentLength
-        };
-        downloadFile('msa_benchmark_report.json', JSON.stringify(report, null, 2), 'application/json');
-    });
-
-    document.getElementById('export-copy-fasta')?.addEventListener('click', () => {
-        if (!currentAlignedFasta) return showToast('No aligned sequences to copy.', true);
-        navigator.clipboard.writeText(currentAlignedFasta);
-        showToast('Aligned FASTA copied to clipboard!');
-    });
-
-    document.getElementById('export-copy-nwk')?.addEventListener('click', () => {
-        if (!currentNewick) return showToast('No Newick tree to copy.', true);
-        navigator.clipboard.writeText(currentNewick);
-        showToast('Newick tree copied to clipboard!');
-    });
-
-    function downloadFile(filename, text, mimeType) {
-        const blob = new Blob([text], { type: mimeType });
+    function downloadFile(filename, content, mimeType) {
+        const blob = new Blob([content], { type: mimeType });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -433,24 +434,59 @@ document.addEventListener('DOMContentLoaded', () => {
         URL.revokeObjectURL(url);
     }
 
-    // 11. Toast Notifications
+    // 12. Console Logs Slide-over Drawer Handlers
+    function openLogsDrawer() {
+        if (!logsDrawer) return;
+        logsDrawer.classList.remove('pointer-events-none');
+        logsBackdrop.classList.remove('opacity-0', 'pointer-events-none');
+        logsContent.classList.remove('translate-x-full');
+    }
+
+    function closeLogsDrawer() {
+        if (!logsDrawer) return;
+        logsContent.classList.add('translate-x-full');
+        logsBackdrop.classList.add('opacity-0', 'pointer-events-none');
+        setTimeout(() => {
+            logsDrawer.classList.add('pointer-events-none');
+        }, 250);
+    }
+
+    btnOpenLogs?.addEventListener('click', openLogsDrawer);
+    btnCloseLogs?.addEventListener('click', closeLogsDrawer);
+    logsBackdrop?.addEventListener('click', closeLogsDrawer);
+
+    btnCopyLogs?.addEventListener('click', () => {
+        const text = stdoutOutput?.textContent || '';
+        if (!text || text.includes('No logs yet')) return showToast('No logs to copy.', true);
+        navigator.clipboard.writeText(text);
+        showToast('Logs copied to clipboard!');
+    });
+
+    // Close drawer on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !logsContent.classList.contains('translate-x-full')) {
+            closeLogsDrawer();
+        }
+    });
+
+    // 13. Toast Notifications
     function showToast(message, isError = false) {
         const toast = document.getElementById('app-toast');
         if (!toast) return;
 
-        toast.className = `fixed bottom-5 right-5 z-50 px-4 py-2.5 rounded-lg shadow-2xl text-xs font-semibold flex items-center gap-2 border transition-all duration-300 transform translate-y-0 opacity-100 ${
+        toast.className = `fixed bottom-4 right-4 z-50 px-3.5 py-2 rounded-lg shadow-2xl text-xs font-semibold flex items-center gap-2 border transition-all duration-300 transform translate-y-0 opacity-100 ${
             isError ? 'bg-rose-900/90 text-rose-100 border-rose-700' : 'bg-emerald-900/90 text-emerald-100 border-emerald-700'
         }`;
-        toast.innerHTML = `<i class="fa-solid ${isError ? 'fa-circle-exclamation' : 'fa-circle-check'} text-sm"></i> ${message}`;
+        toast.innerHTML = `<i class="fa-solid ${isError ? 'fa-circle-exclamation' : 'fa-circle-check'} text-xs"></i> ${message}`;
 
         setTimeout(() => {
-            toast.className = 'fixed bottom-5 right-5 z-50 px-4 py-2.5 rounded-lg shadow-2xl text-xs font-semibold flex items-center gap-2 border transition-all duration-300 transform translate-y-10 opacity-0 pointer-events-none';
-        }, 3500);
+            toast.className = 'fixed bottom-4 right-4 z-50 px-3.5 py-2 rounded-lg shadow-2xl text-xs font-semibold flex items-center gap-2 border transition-all duration-300 transform translate-y-10 opacity-0 pointer-events-none';
+        }, 3200);
     }
     window.showAppToast = showToast;
 
     // Auto-load default RV11 preset on first visit
     setTimeout(() => {
         selectPreset('rv11');
-    }, 400);
+    }, 350);
 });

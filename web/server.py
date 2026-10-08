@@ -346,11 +346,12 @@ def run_alignment(req: AlignRequest):
                     except Exception as e:
                         response_data["stderr"] += f"\nFailed to parse benchmark JSON: {e}"
 
-                # In benchmark mode, also execute standard alignment to get the matrix and tree
+                # In benchmark mode, also execute alignment with baseline comparison to get matrix, tree, and Gotoh vs Myers-Miller memory analysis
                 cmd_align = [
                     str(EXE_PATH),
                     "-i", str(in_file),
                     "-o", str(out_aln_file),
+                    "--baseline-compare",
                     "--export-tree", str(tree_prefix.with_suffix(".json")),
                     "-t", str(threads),
                     "--gap-open", str(gap_open),
@@ -370,6 +371,8 @@ def run_alignment(req: AlignRequest):
                 if proc_align.returncode != 0:
                     err = proc_align.stderr.strip() or proc_align.stdout.strip() or "Alignment process failed"
                     raise HTTPException(status_code=400, detail=f"Alignment error: {err}")
+
+                response_data["baseline_comparison"] = parse_baseline_output(proc_align.stdout)
 
             # Mode B: Baseline Comparison mode
             elif req.mode == "baseline":

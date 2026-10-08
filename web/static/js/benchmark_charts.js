@@ -143,9 +143,15 @@ class BenchmarkDashboard {
         const tbody = document.getElementById('bench-table-body');
         if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-slate-500 text-xs">Run a benchmark to populate metrics table.</td></tr>`;
         const memCard = document.getElementById('memory-comparison-card');
-        if (memCard) memCard.innerHTML = `<div class="p-5 text-center text-slate-500 text-xs">Run with Baseline Comparison to view memory complexity analysis.</div>`;
+        if (memCard) {
+            memCard.classList.add('hidden');
+            memCard.innerHTML = '';
+        }
         const accCard = document.getElementById('accuracy-metrics-card');
-        if (accCard) accCard.innerHTML = `<div class="p-5 text-center text-slate-500 text-xs">Select BAliBASE presets to evaluate SP & TC Scores.</div>`;
+        if (accCard) {
+            accCard.classList.add('hidden');
+            accCard.innerHTML = '';
+        }
     }
 
     renderBenchmarkTable(benchData) {
@@ -184,14 +190,11 @@ class BenchmarkDashboard {
         if (!card) return;
 
         if (!baselineData) {
-            card.innerHTML = `
-                <div class="p-5 text-center text-slate-500 text-xs">
-                    <i class="fa-solid fa-microchip text-2xl mb-2 text-slate-600 block"></i>
-                    Run with <strong class="text-slate-400">Baseline Comparison</strong> to test Gotoh O(mn) vs Myers-Miller O(min(m, n)).
-                </div>
-            `;
+            card.classList.add('hidden');
+            card.innerHTML = '';
             return;
         }
+        card.classList.remove('hidden');
 
         const gotoh = baselineData.gotoh;
         const mm = baselineData.myers_miller;
@@ -206,37 +209,37 @@ class BenchmarkDashboard {
             : `${(mm.peak_memory_bytes / 1024).toFixed(1)} KB`;
 
         card.innerHTML = `
-            <div class="p-5 space-y-4">
+            <div class="p-4 space-y-3">
                 <div class="flex items-center justify-between">
                     <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Pairwise Memory Complexity</span>
-                    <span class="px-2.5 py-1 rounded-full text-xs font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                    <span class="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
                         ${reduction.toFixed(1)}x Less Memory
                     </span>
                 </div>
 
-                <div class="text-xs text-slate-300 font-mono bg-slate-950/80 p-2.5 rounded border border-slate-800">
+                <div class="text-[11px] text-slate-300 font-mono bg-slate-950/80 p-2 rounded border border-slate-800">
                     <i class="fa-solid fa-dna text-indigo-400 mr-1.5"></i> ${baselineData.pair || 'Pairwise Sequences'}
                 </div>
 
                 <!-- Comparison Grid -->
-                <div class="grid grid-cols-2 gap-3 font-mono text-xs">
-                    <div class="bg-slate-900/90 p-3 rounded-lg border border-slate-800">
-                        <div class="text-slate-400 text-[11px] mb-1 font-sans font-semibold">Gotoh NW Matrix</div>
-                        <div class="text-[10px] text-slate-500 mb-2 font-mono">Complexity: O(mn) Quadratic</div>
-                        <div class="text-base font-bold text-rose-400">${gotohMemStr}</div>
-                        <div class="text-[11px] text-slate-400 mt-1">${gotoh.time_ms.toFixed(2)} ms (Score: ${gotoh.score})</div>
+                <div class="grid grid-cols-2 gap-2.5 font-mono text-xs">
+                    <div class="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800">
+                        <div class="text-slate-400 text-[10px] mb-0.5 font-sans font-semibold">Gotoh NW Matrix</div>
+                        <div class="text-[9px] text-slate-500 mb-1.5 font-mono">Complexity: O(mn) Quadratic</div>
+                        <div class="text-sm font-bold text-rose-400">${gotohMemStr}</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">${gotoh.time_ms.toFixed(1)} ms (Score: ${gotoh.score})</div>
                     </div>
 
-                    <div class="bg-slate-900/90 p-3 rounded-lg border border-emerald-900/50">
-                        <div class="text-emerald-400 text-[11px] mb-1 font-sans font-semibold">Myers-Miller Hirschberg</div>
-                        <div class="text-[10px] text-slate-500 mb-2 font-mono">Complexity: O(min(m, n)) Linear</div>
-                        <div class="text-base font-bold text-emerald-400">${mmMemStr}</div>
-                        <div class="text-[11px] text-slate-400 mt-1">${mm.time_ms.toFixed(2)} ms (Score: ${mm.score})</div>
+                    <div class="bg-slate-900/90 p-2.5 rounded-lg border border-emerald-900/50">
+                        <div class="text-emerald-400 text-[10px] mb-0.5 font-sans font-semibold">Myers-Miller Linear</div>
+                        <div class="text-[9px] text-slate-500 mb-1.5 font-mono">Complexity: O(min(m, n)) Linear</div>
+                        <div class="text-sm font-bold text-emerald-400">${mmMemStr}</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">${mm.time_ms.toFixed(1)} ms (Score: ${mm.score})</div>
                     </div>
                 </div>
 
                 <!-- Mathematical identity confirmation -->
-                <div class="flex items-center gap-2 text-xs p-2 rounded bg-slate-950/60 border border-slate-800/80">
+                <div class="flex items-center gap-2 text-[11px] p-2 rounded bg-slate-950/60 border border-slate-800/80">
                     <i class="fa-solid fa-circle-check text-emerald-400"></i>
                     <span class="text-slate-300">Score Identity:</span>
                     <span class="font-bold text-emerald-300">${baselineData.score_identity ? '100% IDENTICAL (Gotoh == Myers-Miller)' : 'MISMATCH'}</span>
@@ -259,14 +262,11 @@ class BenchmarkDashboard {
         }
 
         if (sp === undefined && tc === undefined) {
-            card.innerHTML = `
-                <div class="p-5 text-center text-slate-500 text-xs">
-                    <i class="fa-solid fa-chart-line text-2xl mb-2 text-slate-600 block"></i>
-                    Select <strong class="text-slate-400">BAliBASE RV11 or RV12</strong> presets to evaluate biological accuracy against gold-standard references.
-                </div>
-            `;
+            card.classList.add('hidden');
+            card.innerHTML = '';
             return;
         }
+        card.classList.remove('hidden');
 
         const spPct = (sp * 100).toFixed(1);
         const tcPct = (tc * 100).toFixed(1);
