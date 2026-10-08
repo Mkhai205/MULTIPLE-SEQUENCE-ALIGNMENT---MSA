@@ -92,6 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 else if (p.id === 'rv12') shortName = 'RV12 (BAliBASE)';
                 else if (p.id === 'hemoglobin') shortName = 'Hemoglobin';
                 else if (p.id === 'long_seq') shortName = 'Long Seq (Stress)';
+                else if (p.id === 'large_20') shortName = '20-Seq Benchmark';
 
                 btn.innerHTML = `
                     <span class="truncate font-semibold text-[11px] group-hover:text-blue-400">${shortName}</span>
@@ -125,8 +126,8 @@ document.addEventListener('DOMContentLoaded', () => {
             rawTextInput.value = data.content;
             updateInputStats();
 
-            // Set recommended mode for long_seq
-            if (presetId === 'long_seq') {
+            // Set recommended mode for long_seq and large_20
+            if (presetId === 'long_seq' || presetId === 'large_20') {
                 setMode('benchmark');
             }
 

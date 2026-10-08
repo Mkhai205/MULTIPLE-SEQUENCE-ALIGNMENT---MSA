@@ -38,14 +38,14 @@ class TestWebGui(unittest.TestCase):
         response = self.client.get("/api/presets")
         self.assertEqual(response.status_code, 200)
         presets = response.json()
-        self.assertEqual(len(presets), 4)
+        self.assertEqual(len(presets), 5)
         preset_ids = {p["id"] for p in presets}
-        self.assertEqual(preset_ids, {"rv11", "rv12", "hemoglobin", "long_seq"})
+        self.assertEqual(preset_ids, {"rv11", "rv12", "hemoglobin", "long_seq", "large_20"})
         for p in presets:
             self.assertTrue(p["available"], f"Preset {p['id']} not available")
 
     def test_get_each_preset_content(self):
-        for pid in ["rv11", "rv12", "hemoglobin", "long_seq"]:
+        for pid in ["rv11", "rv12", "hemoglobin", "long_seq", "large_20"]:
             response = self.client.get(f"/api/preset/{pid}")
             self.assertEqual(response.status_code, 200)
             data = response.json()
@@ -202,6 +202,13 @@ MKVILLLVL
         self.assertIn("children", tree)
         self.assertGreater(len(tree["children"]), 0)
         self.assertTrue(data["tree_newick"].endswith(";"))
+
+    def test_preset_large_20_content(self):
+        response = self.client.get("/api/preset/large_20")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["id"], "large_20")
+        self.assertIn("309807.SRU_1450", data["content"])
 
     def test_nonexistent_preset(self):
         response = self.client.get("/api/preset/does_not_exist")
