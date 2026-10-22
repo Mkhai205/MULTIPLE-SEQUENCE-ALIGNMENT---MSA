@@ -1,0 +1,172 @@
+================================================================================
+  EXPERIMENT 2: MULTI-THREADED SCALABILITY, SPEEDUP & EFFICIENCY (OpenMP)
+  Group 5: Multiple Sequence Alignment (MSA) C++17 Pipeline
+================================================================================
+
+--- Benchmark Target: BB11001 (RV11) ---
+============================================================
+  Multiple Sequence Alignment (MSA) C++17 Pipeline
+  Divide-and-Conquer Linear-Space with OpenMP Concurrency
+============================================================
+[INFO] Loaded 4 sequences from BB11001.msf
+
+--- Multi-Threaded Scalability & Accuracy Benchmark ---
+
+### Benchmark Report: BB11001
+- Sequences: 4
+- Average Length: 86 aa
+
+| Threads | Time (ms) | Speedup $S(p)$ | Efficiency $E(p)$ | Peak Mem (MB) | SP Score | TC Score |
+|:-------:|:---------:|:--------------:|:-----------------:|:-------------:|:--------:|:--------:|
+|       1 |      5.14 |           1.00x |           100.0% |          4.68 |   0.9013 |   0.8289 |
+|       2 |      4.52 |           1.14x |            56.9% |          4.86 |   0.9013 |   0.8289 |
+|       4 |      5.26 |           0.98x |            24.4% |          5.18 |   0.9013 |   0.8289 |
+|       8 |      5.97 |           0.86x |            10.8% |          5.58 |   0.9013 |   0.8289 |
+
+
+--- Benchmark Target: BB11002 (RV11) ---
+============================================================
+  Multiple Sequence Alignment (MSA) C++17 Pipeline
+  Divide-and-Conquer Linear-Space with OpenMP Concurrency
+============================================================
+[INFO] Loaded 8 sequences from BB11002.msf
+
+--- Multi-Threaded Scalability & Accuracy Benchmark ---
+
+### Benchmark Report: BB11002
+- Sequences: 8
+- Average Length: 98 aa
+
+| Threads | Time (ms) | Speedup $S(p)$ | Efficiency $E(p)$ | Peak Mem (MB) | SP Score | TC Score |
+|:-------:|:---------:|:--------------:|:-----------------:|:-------------:|:--------:|:--------:|
+|       1 |     23.19 |           1.00x |           100.0% |          5.09 |   0.3283 |   0.0000 |
+|       2 |     18.88 |           1.23x |            61.4% |          5.34 |   0.3283 |   0.0000 |
+|       4 |     18.69 |           1.24x |            31.0% |          6.07 |   0.3283 |   0.0000 |
+|       8 |     19.14 |           1.21x |            15.1% |          6.56 |   0.3283 |   0.0000 |
+
+
+--- Benchmark Target: BB12001 (RV12) ---
+============================================================
+  Multiple Sequence Alignment (MSA) C++17 Pipeline
+  Divide-and-Conquer Linear-Space with OpenMP Concurrency
+============================================================
+[INFO] Loaded 11 sequences from BB12001.msf
+
+--- Multi-Threaded Scalability & Accuracy Benchmark ---
+
+### Benchmark Report: BB12001
+- Sequences: 11
+- Average Length: 458 aa
+
+| Threads | Time (ms) | Speedup $S(p)$ | Efficiency $E(p)$ | Peak Mem (MB) | SP Score | TC Score |
+|:-------:|:---------:|:--------------:|:-----------------:|:-------------:|:--------:|:--------:|
+|       1 |    612.92 |           1.00x |           100.0% |          9.38 |   0.7491 |   0.5238 |
+|       2 |    485.08 |           1.26x |            63.2% |         11.49 |   0.7491 |   0.5238 |
+|       4 |    540.54 |           1.13x |            28.3% |         17.38 |   0.7491 |   0.5238 |
+|       8 |    874.41 |           0.70x |             8.8% |         27.45 |   0.7491 |   0.5238 |
+
+
+--- Benchmark Target: BB12002 (RV12) ---
+============================================================
+  Multiple Sequence Alignment (MSA) C++17 Pipeline
+  Divide-and-Conquer Linear-Space with OpenMP Concurrency
+============================================================
+[INFO] Loaded 6 sequences from BB12002.msf
+
+--- Multi-Threaded Scalability & Accuracy Benchmark ---
+
+### Benchmark Report: BB12002
+- Sequences: 6
+- Average Length: 208 aa
+
+| Threads | Time (ms) | Speedup $S(p)$ | Efficiency $E(p)$ | Peak Mem (MB) | SP Score | TC Score |
+|:-------:|:---------:|:--------------:|:-----------------:|:-------------:|:--------:|:--------:|
+|       1 |     52.61 |           1.00x |           100.0% |          5.27 |   0.8366 |   0.6732 |
+|       2 |     42.28 |           1.24x |            62.2% |          5.95 |   0.8366 |   0.6732 |
+|       4 |     45.72 |           1.15x |            28.8% |          7.05 |   0.8366 |   0.6732 |
+|       8 |     48.52 |           1.08x |            13.6% |          9.13 |   0.8366 |   0.6732 |
+
+
+--- Benchmark Target: BB20001 (RV20) ---
+============================================================
+  Multiple Sequence Alignment (MSA) C++17 Pipeline
+  Divide-and-Conquer Linear-Space with OpenMP Concurrency
+============================================================
+[INFO] Loaded 16 sequences from BB20001.msf
+
+--- Multi-Threaded Scalability & Accuracy Benchmark ---
+
+### Benchmark Report: BB20001
+- Sequences: 16
+- Average Length: 295 aa
+
+| Threads | Time (ms) | Speedup $S(p)$ | Efficiency $E(p)$ | Peak Mem (MB) | SP Score | TC Score |
+|:-------:|:---------:|:--------------:|:-----------------:|:-------------:|:--------:|:--------:|
+|       1 |    495.84 |           1.00x |           100.0% |         11.03 |   0.4709 |   0.0000 |
+|       2 |    307.71 |           1.61x |            80.6% |         16.27 |   0.4709 |   0.0000 |
+|       4 |    290.98 |           1.70x |            42.6% |         26.82 |   0.4709 |   0.0000 |
+|       8 |    286.98 |           1.73x |            21.6% |         37.45 |   0.4709 |   0.0000 |
+
+
+--- Benchmark Target: Hemoglobin (5 seqs) ---
+============================================================
+  Multiple Sequence Alignment (MSA) C++17 Pipeline
+  Divide-and-Conquer Linear-Space with OpenMP Concurrency
+============================================================
+[INFO] Loaded 5 sequences from hemoglobin.fa
+
+--- Multi-Threaded Scalability & Accuracy Benchmark ---
+
+### Benchmark Report: hemoglobin
+- Sequences: 5
+- Average Length: 146 aa
+
+| Threads | Time (ms) | Speedup $S(p)$ | Efficiency $E(p)$ | Peak Mem (MB) | SP Score | TC Score |
+|:-------:|:---------:|:--------------:|:-----------------:|:-------------:|:--------:|:--------:|
+|       1 |     16.36 |           1.00x |           100.0% |          4.86 |   0.0000 |   0.0000 |
+|       2 |     13.09 |           1.25x |            62.5% |          5.17 |   0.0000 |   0.0000 |
+|       4 |     13.34 |           1.23x |            30.7% |          5.80 |   0.0000 |   0.0000 |
+|       8 |     16.53 |           0.99x |            12.4% |          6.87 |   0.0000 |   0.0000 |
+
+
+--- Benchmark Target: Benchmark 20 seqs (190 pairs) ---
+============================================================
+  Multiple Sequence Alignment (MSA) C++17 Pipeline
+  Divide-and-Conquer Linear-Space with OpenMP Concurrency
+============================================================
+[INFO] Loaded 20 sequences from benchmark_20seqs.fa
+
+--- Multi-Threaded Scalability & Accuracy Benchmark ---
+
+### Benchmark Report: benchmark_20seqs
+- Sequences: 20
+- Average Length: 467 aa
+
+| Threads | Time (ms) | Speedup $S(p)$ | Efficiency $E(p)$ | Peak Mem (MB) | SP Score | TC Score |
+|:-------:|:---------:|:--------------:|:-----------------:|:-------------:|:--------:|:--------:|
+|       1 |   1154.60 |           1.00x |           100.0% |         12.03 |   0.0000 |   0.0000 |
+|       2 |   1523.04 |           0.76x |            37.9% |         14.27 |   0.0000 |   0.0000 |
+|       4 |   1526.65 |           0.76x |            18.9% |         19.39 |   0.0000 |   0.0000 |
+|       8 |   1477.93 |           0.78x |             9.8% |         31.63 |   0.0000 |   0.0000 |
+
+
+--- Benchmark Target: Benchmark 40 seqs (780 pairs) ---
+============================================================
+  Multiple Sequence Alignment (MSA) C++17 Pipeline
+  Divide-and-Conquer Linear-Space with OpenMP Concurrency
+============================================================
+[INFO] Loaded 40 sequences from benchmark_40seqs.fa
+
+--- Multi-Threaded Scalability & Accuracy Benchmark ---
+
+### Benchmark Report: benchmark_40seqs
+- Sequences: 40
+- Average Length: 464 aa
+
+| Threads | Time (ms) | Speedup $S(p)$ | Efficiency $E(p)$ | Peak Mem (MB) | SP Score | TC Score |
+|:-------:|:---------:|:--------------:|:-----------------:|:-------------:|:--------:|:--------:|
+|       1 |   5423.45 |           1.00x |           100.0% |         12.01 |   0.0000 |   0.0000 |
+|       2 |   5093.12 |           1.06x |            53.2% |         15.07 |   0.0000 |   0.0000 |
+|       4 |   3660.46 |           1.48x |            37.0% |         23.47 |   0.0000 |   0.0000 |
+|       8 |   3360.26 |           1.61x |            20.2% |         37.87 |   0.0000 |   0.0000 |
+

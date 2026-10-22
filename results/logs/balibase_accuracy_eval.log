@@ -1,0 +1,303 @@
+================================================================================
+  EXPERIMENT 3: BALIBASE 3.0 BIOLOGICAL ACCURACY EVALUATION (SP & TC SCORES)
+  Group 5: Multiple Sequence Alignment (MSA) C++17 Pipeline
+================================================================================
+
+--- Alignment Evaluation: BB11001 (RV11 (<20% identity)) ---
+Command Output:
+============================================================
+  Multiple Sequence Alignment (MSA) C++17 Pipeline
+  Divide-and-Conquer Linear-Space with OpenMP Concurrency
+============================================================
+[INFO] Loaded 4 sequences from BB11001.fa
+
+[INFO] Running Progressive Alignment with 4 thread(s)...
+[SUCCESS] Multiple Alignment Completed!
+  - Number of sequences: 4
+  - Alignment length:    96 columns
+  - Execution time:      6.14 ms
+  - Peak Working Set:    4.95 MB
+[INFO] Aligned FASTA written to: "D:\\workspace\\MSA\\results\\alignments\\BB11001.aln.fa"
+Biological Evaluation Results:
+  - Number of sequences: 4
+  - Alignment length:    96 columns
+  - Execution time:      6.14 ms
+  - Peak Working Set:    4.95 MB
+  - BAliBASE SP Score:   0.9825 (336 / 342 pairs)
+  - BAliBASE TC Score:   0.9649 (55 / 57 columns)
+
+--- Alignment Evaluation: BB11002 (RV11 (<20% identity)) ---
+Command Output:
+============================================================
+  Multiple Sequence Alignment (MSA) C++17 Pipeline
+  Divide-and-Conquer Linear-Space with OpenMP Concurrency
+============================================================
+[INFO] Loaded 8 sequences from BB11002.fa
+
+[INFO] Running Progressive Alignment with 4 thread(s)...
+[SUCCESS] Multiple Alignment Completed!
+  - Number of sequences: 8
+  - Alignment length:    194 columns
+  - Execution time:      19.22 ms
+  - Peak Working Set:    5.58 MB
+[INFO] Aligned FASTA written to: "D:\\workspace\\MSA\\results\\alignments\\BB11002.aln.fa"
+Biological Evaluation Results:
+  - Number of sequences: 8
+  - Alignment length:    194 columns
+  - Execution time:      19.22 ms
+  - Peak Working Set:    5.58 MB
+  - BAliBASE SP Score:   0.4454 (212 / 476 pairs)
+  - BAliBASE TC Score:   0.0000 (0 / 17 columns)
+
+--- Alignment Evaluation: BB11003 (RV11 (<20% identity)) ---
+Command Output:
+============================================================
+  Multiple Sequence Alignment (MSA) C++17 Pipeline
+  Divide-and-Conquer Linear-Space with OpenMP Concurrency
+============================================================
+[INFO] Loaded 4 sequences from BB11003.fa
+
+[INFO] Running Progressive Alignment with 4 thread(s)...
+[SUCCESS] Multiple Alignment Completed!
+  - Number of sequences: 4
+  - Alignment length:    571 columns
+  - Execution time:      148.68 ms
+  - Peak Working Set:    14.96 MB
+[INFO] Aligned FASTA written to: "D:\\workspace\\MSA\\results\\alignments\\BB11003.aln.fa"
+Biological Evaluation Results:
+  - Number of sequences: 4
+  - Alignment length:    571 columns
+  - Execution time:      148.68 ms
+  - Peak Working Set:    14.96 MB
+  - BAliBASE SP Score:   0.4845 (718 / 1482 pairs)
+  - BAliBASE TC Score:   0.3482 (86 / 247 columns)
+
+--- Alignment Evaluation: BB11004 (RV11 (<20% identity)) ---
+Command Output:
+============================================================
+  Multiple Sequence Alignment (MSA) C++17 Pipeline
+  Divide-and-Conquer Linear-Space with OpenMP Concurrency
+============================================================
+[INFO] Loaded 4 sequences from BB11004.fa
+
+[INFO] Running Progressive Alignment with 4 thread(s)...
+[SUCCESS] Multiple Alignment Completed!
+  - Number of sequences: 4
+  - Alignment length:    539 columns
+  - Execution time:      107.11 ms
+  - Peak Working Set:    12.76 MB
+[INFO] Aligned FASTA written to: "D:\\workspace\\MSA\\results\\alignments\\BB11004.aln.fa"
+Biological Evaluation Results:
+  - Number of sequences: 4
+  - Alignment length:    539 columns
+  - Execution time:      107.11 ms
+  - Peak Working Set:    12.76 MB
+  - BAliBASE SP Score:   0.4293 (474 / 1104 pairs)
+  - BAliBASE TC Score:   0.1576 (29 / 184 columns)
+
+--- Alignment Evaluation: BB11005 (RV11 (<20% identity)) ---
+Command Output:
+============================================================
+  Multiple Sequence Alignment (MSA) C++17 Pipeline
+  Divide-and-Conquer Linear-Space with OpenMP Concurrency
+============================================================
+[INFO] Loaded 14 sequences from BB11005.fa
+
+[INFO] Running Progressive Alignment with 4 thread(s)...
+[SUCCESS] Multiple Alignment Completed!
+  - Number of sequences: 14
+  - Alignment length:    526 columns
+  - Execution time:      486.58 ms
+  - Peak Working Set:    13.43 MB
+[INFO] Aligned FASTA written to: "D:\\workspace\\MSA\\results\\alignments\\BB11005.aln.fa"
+Biological Evaluation Results:
+  - Number of sequences: 14
+  - Alignment length:    526 columns
+  - Execution time:      486.58 ms
+  - Peak Working Set:    13.43 MB
+  - BAliBASE SP Score:   0.3139 (2514 / 8008 pairs)
+  - BAliBASE TC Score:   0.0000 (0 / 88 columns)
+
+--- Alignment Evaluation: BB12001 (RV12 (20-40% identity)) ---
+Command Output:
+============================================================
+  Multiple Sequence Alignment (MSA) C++17 Pipeline
+  Divide-and-Conquer Linear-Space with OpenMP Concurrency
+============================================================
+[INFO] Loaded 11 sequences from BB12001.fa
+
+[INFO] Running Progressive Alignment with 4 thread(s)...
+[SUCCESS] Multiple Alignment Completed!
+  - Number of sequences: 11
+  - Alignment length:    595 columns
+  - Execution time:      472.47 ms
+  - Peak Working Set:    15.38 MB
+[INFO] Aligned FASTA written to: "D:\\workspace\\MSA\\results\\alignments\\BB12001.aln.fa"
+Biological Evaluation Results:
+  - Number of sequences: 11
+  - Alignment length:    595 columns
+  - Execution time:      472.47 ms
+  - Peak Working Set:    15.38 MB
+  - BAliBASE SP Score:   0.8529 (11446 / 13420 pairs)
+  - BAliBASE TC Score:   0.6885 (168 / 244 columns)
+
+--- Alignment Evaluation: BB12002 (RV12 (20-40% identity)) ---
+Command Output:
+============================================================
+  Multiple Sequence Alignment (MSA) C++17 Pipeline
+  Divide-and-Conquer Linear-Space with OpenMP Concurrency
+============================================================
+[INFO] Loaded 6 sequences from BB12002.fa
+
+[INFO] Running Progressive Alignment with 4 thread(s)...
+[SUCCESS] Multiple Alignment Completed!
+  - Number of sequences: 6
+  - Alignment length:    241 columns
+  - Execution time:      53.09 ms
+  - Peak Working Set:    6.67 MB
+[INFO] Aligned FASTA written to: "D:\\workspace\\MSA\\results\\alignments\\BB12002.aln.fa"
+Biological Evaluation Results:
+  - Number of sequences: 6
+  - Alignment length:    241 columns
+  - Execution time:      53.09 ms
+  - Peak Working Set:    6.67 MB
+  - BAliBASE SP Score:   0.8360 (1718 / 2055 pairs)
+  - BAliBASE TC Score:   0.6788 (93 / 137 columns)
+
+--- Alignment Evaluation: BB12003 (RV12 (20-40% identity)) ---
+Command Output:
+============================================================
+  Multiple Sequence Alignment (MSA) C++17 Pipeline
+  Divide-and-Conquer Linear-Space with OpenMP Concurrency
+============================================================
+[INFO] Loaded 8 sequences from BB12003.fa
+
+[INFO] Running Progressive Alignment with 4 thread(s)...
+[SUCCESS] Multiple Alignment Completed!
+  - Number of sequences: 8
+  - Alignment length:    93 columns
+  - Execution time:      11.19 ms
+  - Peak Working Set:    5.51 MB
+[INFO] Aligned FASTA written to: "D:\\workspace\\MSA\\results\\alignments\\BB12003.aln.fa"
+Biological Evaluation Results:
+  - Number of sequences: 8
+  - Alignment length:    93 columns
+  - Execution time:      11.19 ms
+  - Peak Working Set:    5.51 MB
+  - BAliBASE SP Score:   0.9295 (963 / 1036 pairs)
+  - BAliBASE TC Score:   0.8378 (31 / 37 columns)
+
+--- Alignment Evaluation: BB12004 (RV12 (20-40% identity)) ---
+Command Output:
+============================================================
+  Multiple Sequence Alignment (MSA) C++17 Pipeline
+  Divide-and-Conquer Linear-Space with OpenMP Concurrency
+============================================================
+[INFO] Loaded 15 sequences from BB12004.fa
+
+[INFO] Running Progressive Alignment with 4 thread(s)...
+[SUCCESS] Multiple Alignment Completed!
+  - Number of sequences: 15
+  - Alignment length:    311 columns
+  - Execution time:      238.53 ms
+  - Peak Working Set:    7.72 MB
+[INFO] Aligned FASTA written to: "D:\\workspace\\MSA\\results\\alignments\\BB12004.aln.fa"
+Biological Evaluation Results:
+  - Number of sequences: 15
+  - Alignment length:    311 columns
+  - Execution time:      238.53 ms
+  - Peak Working Set:    7.72 MB
+  - BAliBASE SP Score:   0.8684 (13860 / 15960 pairs)
+  - BAliBASE TC Score:   0.5921 (90 / 152 columns)
+
+--- Alignment Evaluation: BB12005 (RV12 (20-40% identity)) ---
+Command Output:
+============================================================
+  Multiple Sequence Alignment (MSA) C++17 Pipeline
+  Divide-and-Conquer Linear-Space with OpenMP Concurrency
+============================================================
+[INFO] Loaded 9 sequences from BB12005.fa
+
+[INFO] Running Progressive Alignment with 4 thread(s)...
+[SUCCESS] Multiple Alignment Completed!
+  - Number of sequences: 9
+  - Alignment length:    264 columns
+  - Execution time:      77.10 ms
+  - Peak Working Set:    6.79 MB
+[INFO] Aligned FASTA written to: "D:\\workspace\\MSA\\results\\alignments\\BB12005.aln.fa"
+Biological Evaluation Results:
+  - Number of sequences: 9
+  - Alignment length:    264 columns
+  - Execution time:      77.10 ms
+  - Peak Working Set:    6.79 MB
+  - BAliBASE SP Score:   0.8552 (4218 / 4932 pairs)
+  - BAliBASE TC Score:   0.6058 (83 / 137 columns)
+
+--- Alignment Evaluation: BB20001 (RV20 (Large Families)) ---
+Command Output:
+============================================================
+  Multiple Sequence Alignment (MSA) C++17 Pipeline
+  Divide-and-Conquer Linear-Space with OpenMP Concurrency
+============================================================
+[INFO] Loaded 16 sequences from BB20001.fa
+
+[INFO] Running Progressive Alignment with 4 thread(s)...
+[SUCCESS] Multiple Alignment Completed!
+  - Number of sequences: 16
+  - Alignment length:    755 columns
+  - Execution time:      332.48 ms
+  - Peak Working Set:    26.86 MB
+[INFO] Aligned FASTA written to: "D:\\workspace\\MSA\\results\\alignments\\BB20001.aln.fa"
+Biological Evaluation Results:
+  - Number of sequences: 16
+  - Alignment length:    755 columns
+  - Execution time:      332.48 ms
+  - Peak Working Set:    26.86 MB
+  - BAliBASE SP Score:   0.4880 (2928 / 6000 pairs)
+  - BAliBASE TC Score:   0.0000 (0 / 50 columns)
+
+--- Alignment Evaluation: BB20002 (RV20 (Large Families)) ---
+Command Output:
+============================================================
+  Multiple Sequence Alignment (MSA) C++17 Pipeline
+  Divide-and-Conquer Linear-Space with OpenMP Concurrency
+============================================================
+[INFO] Loaded 20 sequences from BB20002.fa
+
+[INFO] Running Progressive Alignment with 4 thread(s)...
+[SUCCESS] Multiple Alignment Completed!
+  - Number of sequences: 20
+  - Alignment length:    1598 columns
+  - Execution time:      2150.40 ms
+  - Peak Working Set:    79.10 MB
+[INFO] Aligned FASTA written to: "D:\\workspace\\MSA\\results\\alignments\\BB20002.aln.fa"
+Biological Evaluation Results:
+  - Number of sequences: 20
+  - Alignment length:    1598 columns
+  - Execution time:      2150.40 ms
+  - Peak Working Set:    79.10 MB
+  - BAliBASE SP Score:   0.2589 (782 / 3021 pairs)
+  - BAliBASE TC Score:   0.0000 (0 / 15 columns)
+
+--- Alignment Evaluation: BB20003 (RV20 (Large Families)) ---
+Command Output:
+============================================================
+  Multiple Sequence Alignment (MSA) C++17 Pipeline
+  Divide-and-Conquer Linear-Space with OpenMP Concurrency
+============================================================
+[INFO] Loaded 74 sequences from BB20003.fa
+
+[INFO] Running Progressive Alignment with 4 thread(s)...
+[SUCCESS] Multiple Alignment Completed!
+  - Number of sequences: 74
+  - Alignment length:    862 columns
+  - Execution time:      7506.35 ms
+  - Peak Working Set:    30.82 MB
+[INFO] Aligned FASTA written to: "D:\\workspace\\MSA\\results\\alignments\\BB20003.aln.fa"
+Biological Evaluation Results:
+  - Number of sequences: 74
+  - Alignment length:    862 columns
+  - Execution time:      7506.35 ms
+  - Peak Working Set:    30.82 MB
+  - BAliBASE SP Score:   0.9200 (549190 / 596921 pairs)
+  - BAliBASE TC Score:   0.0000 (0 / 221 columns)

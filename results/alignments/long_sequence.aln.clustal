@@ -1,0 +1,83 @@
+CLUSTAL W (1.83) multiple sequence alignment
+
+
+seq1_domain_repeat_alpha    PAGFRQVCYAFM-AEPMFNTAT-QHERNCCTP-TRMYINTPVNRAFGCFDGPIIFGWVPP
+seq2_domain_repeat_beta     PAGFRQVCKAFM-AEPMFNTATNQHEYHCCTP-TRMYINTPVNRAFGCFDGPIIFGW-PP
+seq3_domain_repeat_gamma    PLGFMQVCKLFMPAEPMEN--TTQHEYHCCTPDTRMYMNTWVNRAFGCFDGPIIFGW-PP
+                            * ** ***  ** **** *  * *** :**** ****:** **************** **
+
+seq1_domain_repeat_alpha    EREIYPNQTSFAHGFWVHCIWLGFNGNVIFYMCADPNKCIYMYVAKQMGP-DKLMVGMVW
+seq2_domain_repeat_beta     EREIYPNQTSFAHRFWKHQINLGDNGNVIFYMCADPSKCIYMYVARQMGP-DKLYVGMEW
+seq3_domain_repeat_gamma    EREIYPNQTSFAHGFWVHQSWLGFIGNVIFYMCADPSKCIYMYVARQMGPCDKLY-GMEW
+                            ************* ** *   **  ***********.********:**** ***  ** *
+
+seq1_domain_repeat_alpha    VGP-PEM-SMAHAAVTHKCQWCLCSSDLTGVSFMRFHYPKMDFHNFFCPFWVCFQFDWNL
+seq2_domain_repeat_beta     VQP-PESYYMAHRWVT-TCVWCLCSSDLMGVKFMRFHNPKMDFHNFFCPFWVCFQFDWNL
+seq3_domain_repeat_gamma    VGPWPESTSMAHALVTH-CVWCLCSSDLMGVKF-RFHYPKMDFHSFFCPFWMCFQKDWRL
+                            * * **   ***  **  * ******** **.* *** ******.******:*** **.*
+
+seq1_domain_repeat_alpha    STECKKLRQYCK-HVFE-KKGFWLVNCYTYWTELFKCIYGSKKYYN--EGYNMTCNMVEY
+seq2_domain_repeat_beta     STECKKLRQYCK-HVFEHKKGFWKVNCYTYWTELFKCIYGSLKYYNR-EGYNMRCNMVEY
+seq3_domain_repeat_gamma    STECKSLRQYCKAHVF-GKKDFWKVNCYTMWTELFKCIWGSAKYYNRGEGYNPRCNMVEY
+                            *****.****** ***  **.** ***** ********:** ****  ****  ******
+
+seq1_domain_repeat_alpha    CEGQDDVFNPKNMWFRFPQHHSCLYCF-GWVVIETAPYQATGQWDDDNGPRFPGLWTCKG
+seq2_domain_repeat_beta     CENQFDVFNPCNCWFRF-IGHSCLYYFTGWVVIETRPYQATGQWPDDNGPRFPPLWACKG
+seq3_domain_repeat_gamma    CRNQFENFNPKPMWFRFIQCHSCLYYCFGWVVIETRPYQATPQWDDD-GPRFPGLWTCLG
+                            *..* : ***   ****   *****   ******* ***** ** ** ***** **:* *
+
+seq1_domain_repeat_alpha    ASPGRNKACVWMTNDDHV-SVVFFDSVKPEWVYTVNRHWTVTGSD-VVFTLHSEAEHV-Y
+seq2_domain_repeat_beta     ASPGRNKACVWMTNDDHVHSVVFFGSVKPEWVYTNQRYWTVTKSD-VVFTLHSFAKHV-Y
+seq3_domain_repeat_gamma    ASPGRNKACVWMTNSDHLVSVVFFDSVKPEWRYTVARHWTVTGSDHVVFCLHSFAEHVNY
+                            **************.**: *****.****** **  *:**** ** *** *** *:** *
+
+seq1_domain_repeat_alpha    RPIYMWDYEMEDKRHPM-INGRAWMRRQICQHHTRHHKKLGDKWQWPHMAGKNMLKFLWS
+seq2_domain_repeat_beta     GPI-MWDYEYGDNRHPMQINGRAWMRRQICQHHTRHHKK-GD-WQWPHMAGKNQLKFLWS
+seq3_domain_repeat_gamma    GPIYMWDYEAGDKRHPMINAGRAWMRRQICQHHTRHHKK--DKWQWPHMAGKNQLKFLWY
+                             ** *****  *:****   *******************  * ********** ***** 
+
+seq1_domain_repeat_alpha    ECM-NHTSQ-FEAFLTCKPEQLFQASSDKEYMCFTLTQYNYVPRMCMVRLGFPSMPSCGG
+seq2_domain_repeat_beta     ECM-PHTSQ-FEAFRTCKPQQLFQASSDKEYMCFNLTQYNYVPRMTMVRLGFPSMPGCGG
+seq3_domain_repeat_gamma    ECMSPHTSQWFEAFLTCKPEQLFQASSDKEYMCFTLTQYNCVPRHTMVRFGFPSMPGCGG
+                            ***  **** **** ****:**************.***** ***  ***:******.***
+
+seq1_domain_repeat_alpha    H-DFQRCKMKFQWNSVTSIAIVYKRMPFFKASPKEDLDPAINAVDLCIFHSISTH-HAMY
+seq2_domain_repeat_beta     HMDFQRCKMKFKWNQVSCAISVYKRMPFFKAHQKE-YDPA-NAPDLCIFHSISTG-CAMY
+seq3_domain_repeat_gamma    HMD-QRCKMKYKWNQ-SIAISV--RMPFTKAHQKE-LDPAINAPDLCIFHSISTGKCAMY
+                            * * ******::**. :    *  **** **  **  *** ** **********   ***
+
+seq1_domain_repeat_alpha    HQSHSWMAEDQNFQSEPRDTYDAHQYIRCQPDSVPDYSHPIMHTTDYDTRKRFGTMLKRG
+seq2_domain_repeat_beta     HQSQSWEAEDQNFQSEPRDTYDAHQYIRCQPDSVPDYSHKIIHTTDYPTRKRYGRMLKRG
+seq3_domain_repeat_gamma    EQ-QSWEAEDQNFQSEPRYEYDAHQYIRCQPDSV-EYSHTEMHTTDGPTRKRC-TMLKRG
+                            .* :** ***********  ************** :***  :****  ****   *****
+
+seq1_domain_repeat_alpha    VTCVFLPIAVEFSHVRGAWCRLSQVLSCFQHNLMKRHRGGDEDPSEFLRYMGDEFEAMGY
+seq2_domain_repeat_beta     VTCVFLPIAVEFSHVRGANCRLSQPLSCFQHNKMKRHRGGDEDMSEFLRYMGDEF-AMGY
+seq3_domain_repeat_gamma    VTCPFLPIAVECSHWRGAWCRLSQPLSCFM-NLMKRHRGGDEDMSEFLRY-GDEFEAMGY
+                            *** ******* ** *** ***** ****  * ********** ****** **** ****
+
+seq1_domain_repeat_alpha    NQEVLVNLKECWLTK-CPCDNHYDSPSAMLKVYHPVRWFFQEERALNGFRRLQWSPQWKM
+seq2_domain_repeat_beta     NQVVLVNLKECWLTKRGPC-NHYDSPSFMLKVYHPPRWF--QEECLNGFRPLQWSPQWKM
+seq3_domain_repeat_gamma    NQDVRVNLKSCLVTY--PCDNHYDSPSFMLKVYIP-RWFFGEECALNGFRRLQWWPQWKM
+                            ** * ****.* :*   ** ******* ***** * ***  :* .***** *** *****
+
+seq1_domain_repeat_alpha    PWTCEHRNGDQQWMLCAKHLCYTNYYQGASLQWENPLCHHQVHQGWTNLH--HFKMYQMK
+seq2_domain_repeat_beta     PW-CEHRNGDQQWMLCAKHGCYTNYYQGASLQWINPLCHHQVHQGWTNLHDHHYCMYQMK
+seq3_domain_repeat_gamma    P-TCEHRNGDQQYMLCAKHGCYTNYYQGASLQWENPLCHHQVHQGWTNLH--HYKMYP-K
+                            *  *********:****** ************* ****************  *: **  *
+
+seq1_domain_repeat_alpha    EISPSFMWKQDMYPFENNCSWLDTLSMGTYFNEWMVVGSKWMTGGNYLDMHNMLHEQNFS
+seq2_domain_repeat_beta     EISPSFHWKQD-YPFENNCYWLDGLRMGTYFNIWMVVGQKWMTGWNYLDMHNLCHEQNFS
+seq3_domain_repeat_gamma    EISPSFMWKQRDVPFENNCYWLDTLRM-TYFNIWMVVGSKWMTGGNYLDMHNMLHEQNYS
+                            ****** ***   ****** *** * * **** *****.***** *******: ****:*
+
+seq1_domain_repeat_alpha    ARRTIQTYLAMNVVKMLRKQDLYHQPVVVIHRSVACQWYRKCPVKQWASGIDMNSEGV--
+seq2_domain_repeat_beta     ARRTIQTYNAMIVVKRLRKQELYHQPVVVIHRSVAVPWYR-CPVKQWAFGIDMNSECV--
+seq3_domain_repeat_gamma    ARRMIQTYLAMNVVKMLRKQELNHQPVVVIHRSVACPWYRHCEVKQ-HSGVDMNSEFMVD
+                            *** **** ** *** ****:* ************  *** * ***   *:***** :  
+
+seq1_domain_repeat_alpha    PFPDLGGALWQEKHNPKGTEILFN-N
+seq2_domain_repeat_beta     PFWWFGGATWQEKHNPKGTEILFN-N
+seq3_domain_repeat_gamma    PKWDLGGAT-QEKHNPKTLEILFNGN
+                            *   :***  *******  ***** *
+

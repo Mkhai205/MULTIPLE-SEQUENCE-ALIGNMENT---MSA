@@ -1,0 +1,43 @@
+{
+  "dataset_name": "BB11001",
+  "num_sequences": 4,
+  "avg_sequence_length": 86,
+  "results": [
+    {
+      "threads": 1,
+      "runtime_ms": 5.8067,
+      "speedup": 1,
+      "efficiency": 1,
+      "peak_memory_bytes": 4886528,
+      "sp_score": 0,
+      "tc_score": 0
+    },
+    {
+      "threads": 2,
+      "runtime_ms": 4.09745,
+      "speedup": 1.41715,
+      "efficiency": 0.708575,
+      "peak_memory_bytes": 5062656,
+      "sp_score": 0,
+      "tc_score": 0
+    },
+    {
+      "threads": 4,
+      "runtime_ms": 4.9949,
+      "speedup": 1.16253,
+      "efficiency": 0.290631,
+      "peak_memory_bytes": 5382144,
+      "sp_score": 0,
+      "tc_score": 0
+    },
+    {
+      "threads": 8,
+      "runtime_ms": 6.03235,
+      "speedup": 0.962593,
+      "efficiency": 0.120324,
+      "peak_memory_bytes": 5812224,
+      "sp_score": 0,
+      "tc_score": 0
+    }
+  ]
+}
