@@ -12,4 +12,6 @@ out/
 __pycache__/
 *.pyc
 .local/
+data/BAliBASE_R1-5/
+
 

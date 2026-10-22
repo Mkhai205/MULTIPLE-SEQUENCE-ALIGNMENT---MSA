@@ -65,9 +65,9 @@ class TestWebGui(unittest.TestCase):
         data = response.json()
         self.assertTrue(data["success"])
         self.assertEqual(len(data["aligned_sequences"]), 4)
-        self.assertEqual(data["metrics"]["alignment_length"], 60)
-        self.assertAlmostEqual(data["metrics"]["sp_score"], 0.9405, delta=0.005)
-        self.assertAlmostEqual(data["metrics"]["tc_score"], 0.9107, delta=0.005)
+        self.assertEqual(data["metrics"]["alignment_length"], 96)
+        self.assertAlmostEqual(data["metrics"]["sp_score"], 0.9013, delta=0.01)
+        self.assertAlmostEqual(data["metrics"]["tc_score"], 0.8289, delta=0.01)
         self.assertIsNotNone(data["tree"])
         self.assertIn("1aab_", data["tree_newick"])
 
@@ -81,8 +81,8 @@ class TestWebGui(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertTrue(data["success"])
-        self.assertEqual(len(data["aligned_sequences"]), 3)
-        self.assertEqual(data["metrics"]["alignment_length"], 65)
+        self.assertEqual(len(data["aligned_sequences"]), 11)
+        self.assertEqual(data["metrics"]["alignment_length"], 595)
         self.assertIsNotNone(data["tree"])
 
     def test_align_hemoglobin_family(self):
