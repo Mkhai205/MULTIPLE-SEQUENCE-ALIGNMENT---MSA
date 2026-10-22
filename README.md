@@ -76,22 +76,94 @@ Quy trình căn chỉnh tuần tự tiến bộ (Progressive Alignment) gồm 4 
 ## 4. Hướng dẫn Biên dịch (Build Instructions)
 
 ### Yêu cầu hệ thống:
-- C++17 Compiler (MSVC 2019+, GCC 9+, hoặc Clang 10+)
-- CMake 3.16 trở lên
-- Hỗ trợ OpenMP (`OpenMP::OpenMP_CXX`)
+- **C++17 Compiler**: MSVC 2019+, GCC 9+, hoặc Clang 10+
+- **CMake**: Phiên bản 3.16 trở lên
+- **OpenMP**: `OpenMP::OpenMP_CXX` (hỗ trợ đa luồng trên CPU đa nhân)
+- **MPI (Tùy chọn)**: OpenMPI, MPICH (trên Linux/Cluster) hoặc Microsoft MPI (trên Windows)
 
-### Lệnh biên dịch trên Windows (Visual Studio / MSVC):
+---
+
+### 4.1. Biên dịch Hệ thống OpenMP Mặc định (Single Node / Multi-core CPU)
+
+#### Trên Linux / macOS (GCC / Clang):
+```bash
+# Cấu hình dự án bằng CMake
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+# Biên dịch toàn bộ thư viện, CLI và test suites
+cmake --build build -j$(nproc)
+
+# Hoặc biên dịch trực tiếp bằng g++
+g++ -O3 -std=c++17 -fopenmp -Iinclude \
+    src/core/*.cpp src/align/*.cpp src/tree/*.cpp \
+    src/parallel/*.cpp src/eval/*.cpp src/io/*.cpp src/main.cpp \
+    -o build/msa_align
+```
+
+#### Trên Windows (Visual Studio / MSVC):
 ```powershell
-# Tạo thư mục build và cấu hình
+# Tạo thư mục build và cấu hình Release
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 
 # Biên dịch toàn bộ thư viện, CLI và test suites
 cmake --build build --config Release
 ```
 
-Các file thực thi sinh ra tại `build/Release/`:
-- `msa_align.exe`: Ứng dụng dòng lệnh chính.
-- `msa_unit_tests.exe`: Bộ kiểm thử đơn vị tự động (107 tests).
+Các file thực thi sinh ra tại `build/Release/` (hoặc `build/` trên Linux):
+- `msa_align`: Ứng dụng dòng lệnh chính kết hợp OpenMP đa tầng.
+- `msa_unit_tests`: Bộ kiểm thử đơn vị tự động (108 tests, 139,463 assertions).
+
+---
+
+### 4.2. Biên dịch Hệ thống Song song Phân tán MPI (`msa_align_mpi`)
+
+Khi triển khai trên cụm máy tính phân tán (HPC Cluster / Multi-node), hệ thống cung cấp target phân tán độc lập `msa_align_mpi` kết hợp **Hybrid MPI + OpenMP**:
+
+#### Biên dịch bằng CMake với cờ `ENABLE_MPI`:
+```bash
+# Cấu hình dự án bật hỗ trợ MPI
+cmake -B build_mpi -DCMAKE_BUILD_TYPE=Release -DENABLE_MPI=ON
+
+# Biên dịch target msa_align_mpi
+cmake --build build_mpi --target msa_align_mpi -j$(nproc)
+```
+
+#### Biên dịch trực tiếp bằng trình biên dịch MPI (`mpicxx`):
+```bash
+mpicxx -O3 -std=c++17 -DUSE_MPI -fopenmp -Iinclude \
+    src/core/*.cpp src/align/*.cpp src/tree/*.cpp \
+    src/parallel/*.cpp src/eval/*.cpp src/io/*.cpp src/msa_mpi_main.cpp \
+    -o build/msa_align_mpi
+```
+
+---
+
+### 4.3. Hướng dẫn Thực thi Đa tiến trình & Đa luồng (Execution Guide)
+
+#### 1. Chạy OpenMP đa luồng trên 1 máy tính:
+Thiết lập số luồng qua biến môi trường hoặc cờ `-t`:
+```bash
+# Thiết lập biến môi trường số luồng OpenMP
+export OMP_NUM_THREADS=8       # Trên Linux/macOS
+$env:OMP_NUM_THREADS="8"       # Trên Windows PowerShell
+
+# Chạy căn chỉnh với 8 luồng
+./build/msa_align -i data/presets/benchmark_20seqs.fa -o output.aln.fa -t 8
+```
+
+#### 2. Chạy MPI phân tán trên $P$ Node/Ranks:
+Phân phối tính toán ma trận khoảng cách $N(N-1)/2$ cặp trên $P$ tiến trình phân tán:
+```bash
+# Chạy trên 4 tiến trình MPI
+mpirun -np 4 ./build/msa_align_mpi -i data/presets/benchmark_40seqs.fa -o output_mpi.aln.fa
+```
+
+#### 3. Chạy Hybrid MPI + OpenMP (Tối ưu cho Cụm Siêu máy tính):
+Mỗi Node mạng chạy 1 tiến trình MPI, bên trong mỗi Node tận dụng toàn bộ số nhân CPU bằng OpenMP:
+```bash
+# Ví dụ: 2 Node mạng (MPI ranks), mỗi Node sử dụng 4 luồng CPU OpenMP (Tổng 8 cores)
+mpirun -np 2 -x OMP_NUM_THREADS=4 ./build/msa_align_mpi -i data/presets/benchmark_40seqs.fa -o output.aln.fa -t 4
+```
 
 ---
 
@@ -137,21 +209,28 @@ Script sẽ tự động khởi động máy chủ FastAPI tại `http://localho
 
 ---
 
-## 6. Hướng dẫn Sử dụng CLI (`msa_align`)
+## 6. Hướng dẫn Sử dụng CLI (`msa_align` & `msa_align_mpi`)
 
 ### Các tùy chọn tham số:
 ```text
-Cú pháp: msa_align [OPTIONS] --input <FILE>
+Cú pháp chạy Căn chỉnh:
+  msa_align [OPTIONS] --input <FILE>
+
+Cú pháp Đánh giá Độ chính xác Sinh học Trực tiếp:
+  msa_align --score --ref <REF.msf> --aligned <TEST.fa>
 
 Tùy chọn:
-  -i, --input <FILE>           Đường dẫn file đầu vào (.fa, .fasta, .msf) [BẮT BUỘC]
-  -o, --output <FILE>          Đường dẫn file FASTA kết quả căn chỉnh
+  -i, --input <FILE>           Đường dẫn file đầu vào (.fa, .fasta, .msf) [BẮT BUỘC khi căn chỉnh]
+  -o, --output <FILE>          Đường dẫn file FASTA kết quả căn chỉnh [mặc định: in ra stdout/file]
       --export-tree <FILE>     Xuất cây UPGMA sang Newick (.nwk) hoặc JSON (.json)
   -t, --threads <NUM>          Số luồng OpenMP xử lý song song [mặc định: 1]
       --gap-open <NUM>         Điểm phạt mở khoảng trống (affine gap open) [mặc định: -10]
       --gap-extend <NUM>       Điểm phạt mở rộng khoảng trống (gap extend) [mặc định: -1]
       --benchmark              Bật chế độ đo đạc hiệu năng song song (Speedup, Efficiency)
       --baseline-compare       So sánh trực tiếp Myers-Miller với Gotoh NW baseline
+      --ref <FILE>             File reference MSF chuẩn BAliBASE để chấm điểm SP/TC
+      --aligned <FILE>         File FASTA đã căn chỉnh cần kiểm tra chất lượng
+      --score                  Chế độ chỉ chấm điểm sinh học SP/TC mà không chạy lại căn chỉnh
   -v, --verbose                In chi tiết các bước xử lý
   -h, --help                   Hiển thị thông tin trợ giúp
       --version                Hiển thị phiên bản
@@ -159,12 +238,22 @@ Tùy chọn:
 
 ### Ví dụ sử dụng:
 
-1. **Căn chỉnh đa chuỗi cơ bản**:
+1. **Căn chỉnh đa chuỗi cơ bản với OpenMP**:
    ```powershell
-   .\build\Release\msa_align.exe -i data/balibase/BB11001.msf -o aligned.fa -t 4
+   .\build\Release\msa_align.exe -i data/presets/hemoglobin.fa -o output.aln.fa -t 4
    ```
 
-2. **So sánh kiểm chứng thuật toán tuyến tính với Gotoh NW**:
+2. **Vừa căn chỉnh vừa chấm điểm trực tiếp với file chuẩn BAliBASE**:
+   ```powershell
+   .\build\Release\msa_align.exe -i data/balibase/BB11001.msf --ref data/balibase/BB11001.msf -o aligned.fa -t 4
+   ```
+
+3. **Chấm điểm độc lập một file FASTA đã căn chỉnh sẵn (Direct Scoring Mode)**:
+   ```powershell
+   .\build\Release\msa_align.exe --score --ref data/balibase/BB11001.msf --aligned output/BB11001.aln.fa
+   ```
+
+4. **So sánh kiểm chứng thuật toán tuyến tính với Gotoh NW**:
    ```powershell
    .\build\Release\msa_align.exe -i data/balibase/BB11001.msf --baseline-compare
    ```
@@ -177,23 +266,15 @@ Tùy chọn:
      Memory Reduction:     92.0x less memory
    ```
 
-3. **Chạy Benchmark hiệu năng và độ chính xác sinh học**:
+5. **Chạy Benchmark hiệu năng và độ chính xác sinh học**:
    ```powershell
    .\build\Release\msa_align.exe -i data/balibase/BB11001.msf --benchmark
-   ```
-   *Báo cáo kết quả*:
-   ```markdown
-   | Threads | Time (ms) | Speedup S(p) | Efficiency E(p) | Peak Mem (MB) | SP Score | TC Score |
-   |:-------:|:---------:|:--------------:|:-----------------:|:-------------:|:--------:|:--------:|
-   |       1 |      1.88 |           1.00x |           100.0% |          4.69 |   0.9405 |   0.9107 |
-   |       2 |      3.33 |           0.56x |            28.2% |          5.09 |   0.9405 |   0.9107 |
-   |       4 |      4.87 |           0.39x |             9.6% |          5.38 |   0.9405 |   0.9107 |
    ```
 
 ---
 
-## 6. Kiểm thử và Độ tin cậy Hệ thống
+## 7. Kiểm thử và Độ tin cậy Hệ thống (Automated Verification)
 
-- **Unit Tests**: 107/107 test cases vượt qua (139,446 assertions) kiểm tra từ tính toàn vẹn cấu trúc chuỗi, ma trận BLOSUM62 đối xứng, 25 cặp chuỗi ngẫu nhiên đối chiếu NW vs Hirschberg, đến OpenMP Wavefront và BAliBASE evaluation.
-- **E2E Tests**: 234/234 test cases vượt qua trên toàn bộ pipeline 4 tầng.
-- **Độ tin cậy toán học**: Đảm bảo 100% bảo tồn amino acid ban đầu (không suy biến ký tự, không rơi rụng hay sinh thêm amino acid sai lệch).
+- **Unit Tests**: 108/108 test cases vượt qua 100% (139,463 assertions) kiểm tra từ tính toàn vẹn cấu trúc chuỗi, ma trận BLOSUM62 đối xứng, 25 cặp chuỗi ngẫu nhiên đối chiếu NW vs Hirschberg, phân chia tải Block-Cyclic MPI, đến OpenMP Wavefront và BAliBASE evaluation.
+- **E2E Tests**: 234/234 test cases vượt qua 100% trên toàn bộ pipeline 4 tầng từ nạp dữ liệu đến xuất file Newick và FASTA.
+- **Độ tin cậy toán học**: Đảm bảo 100% bảo tồn amino acid ban đầu (không suy biến ký tự, không rơi rụng hay sinh thêm amino acid ngoài ý muốn).

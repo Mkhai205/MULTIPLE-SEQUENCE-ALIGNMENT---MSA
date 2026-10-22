@@ -11,3 +11,5 @@ out/
 *.ilk
 __pycache__/
 *.pyc
+.local/
+

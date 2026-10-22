@@ -43,6 +43,41 @@ int main(int argc, char* argv[]) {
             return 0;
         }
 
+        // 0. Direct SP/TC Biological Accuracy Evaluation Mode
+        if (config.score_only || (!config.ref_file.empty() && !config.aligned_file.empty())) {
+            std::cout << "============================================================\n";
+            std::cout << "  BAliBASE 3.0 Biological Accuracy Evaluation (Group 5)\n";
+            std::cout << "============================================================\n";
+
+            auto ref = msa::eval::BalibaseParser::parseMSF(config.ref_file);
+            auto aligned_seqs = msa::io::FastaParser::read_file(config.aligned_file);
+
+            if (aligned_seqs.empty()) {
+                std::cerr << "[ERROR] Aligned file contains no sequences: " << config.aligned_file << "\n";
+                return 1;
+            }
+
+            msa::core::Profile profile(aligned_seqs);
+            auto sp_res = msa::eval::SPScore::compute(ref, profile, true);
+            auto tc_res = msa::eval::TCScore::compute(ref, profile, true);
+
+            std::cout << "Reference Alignment  : " << config.ref_file.filename().string()
+                      << " (" << ref.numSequences() << " sequences, " << ref.length() << " columns)\n";
+            std::cout << "Test Alignment       : " << config.aligned_file.filename().string()
+                      << " (" << profile.numSequences() << " sequences, " << profile.length() << " columns)\n";
+            std::cout << "Core Blocks Evaluated: " << ref.coreBlocks().size() << " regions ("
+                      << ref.numCoreColumns() << " core columns)\n";
+            std::cout << "------------------------------------------------------------\n";
+            std::cout << "  Sum-of-Pairs (SP) Score : " << std::fixed << std::setprecision(4) << sp_res.score
+                      << "  (" << sp_res.correct_pairs << " / " << sp_res.total_ref_pairs << " pairs, "
+                      << std::setprecision(2) << (sp_res.score * 100.0) << "%)\n";
+            std::cout << "  Total Column (TC) Score : " << std::fixed << std::setprecision(4) << tc_res.score
+                      << "  (" << tc_res.correct_columns << " / " << tc_res.total_ref_columns << " columns, "
+                      << std::setprecision(2) << (tc_res.score * 100.0) << "%)\n";
+            std::cout << "============================================================\n";
+            return 0;
+        }
+
         if (config.input_file.empty()) {
             std::cerr << "Error: No input file specified.\n";
             std::cerr << "Run 'msa_align --help' for usage options.\n";
@@ -58,13 +93,20 @@ int main(int argc, char* argv[]) {
         std::vector<msa::core::Sequence> sequences;
         std::unique_ptr<msa::eval::BalibaseReference> balibase_ref;
 
+        if (!config.ref_file.empty()) {
+            auto ref = msa::eval::BalibaseParser::parseMSF(config.ref_file);
+            balibase_ref = std::make_unique<msa::eval::BalibaseReference>(std::move(ref));
+        }
+
         std::string ext = config.input_file.extension().string();
         for (char& c : ext) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
 
         if (ext == ".msf") {
             auto ref = msa::eval::BalibaseParser::parseMSF(config.input_file);
             sequences = ref.extractRawSequences();
-            balibase_ref = std::make_unique<msa::eval::BalibaseReference>(std::move(ref));
+            if (!balibase_ref) {
+                balibase_ref = std::make_unique<msa::eval::BalibaseReference>(std::move(ref));
+            }
         } else {
             // Default to FASTA parser
             msa::io::FastaParser::Options fasta_opt;

@@ -111,6 +111,7 @@ msa_resolve_sources(MSA_TREE_SRCS
     src/tree/upgma.cpp
     src/tree/guide_tree.cpp
     src/parallel/tree_scheduler.cpp
+    src/parallel/mpi_distance_matrix.cpp
 )
 
 add_library(msa_tree STATIC ${MSA_TREE_SRCS})
@@ -161,6 +162,33 @@ target_link_libraries(msa_align_bin PRIVATE
     msa_core
     OpenMP::OpenMP_CXX
 )
+
+# ==============================================================================
+# Executable: msa_align_mpi (Distributed MPI + OpenMP Entry Point)
+# ==============================================================================
+option(ENABLE_MPI "Build distributed MPI target msa_align_mpi" OFF)
+
+if(ENABLE_MPI)
+    find_package(MPI REQUIRED CXX)
+    if(MPI_CXX_FOUND)
+        add_executable(msa_align_mpi
+            src/msa_mpi_main.cpp
+        )
+        target_include_directories(msa_align_mpi PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/include
+        )
+        target_compile_definitions(msa_align_mpi PRIVATE USE_MPI)
+        target_link_libraries(msa_align_mpi PRIVATE
+            msa_eval
+            msa_tree
+            msa_align
+            msa_core
+            MPI::MPI_CXX
+            OpenMP::OpenMP_CXX
+        )
+        message(STATUS "[INFO] MPI target msa_align_mpi successfully configured.")
+    endif()
+endif()
 
 # ==============================================================================
 # Testing Infrastructure (Unit Tests)

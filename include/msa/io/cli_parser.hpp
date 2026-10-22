@@ -14,11 +14,14 @@ struct CliConfig {
     std::filesystem::path input_file;
     std::filesystem::path output_file;
     std::filesystem::path export_tree_file;
+    std::filesystem::path ref_file;       // Path to reference MSF alignment file for SP/TC scoring
+    std::filesystem::path aligned_file;   // Path to test aligned FASTA file for scoring
     int num_threads = 1;
     int gap_open = -10;
     int gap_extend = -1;
     bool benchmark = false;
     bool baseline_compare = false;
+    bool score_only = false;              // Directly compute SP/TC scores without re-aligning
     bool show_help = false;
     bool show_version = false;
     bool verbose = false;

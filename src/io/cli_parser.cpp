@@ -87,6 +87,12 @@ CliConfig CliParser::parse(int argc, const char* const argv[], bool validate_fil
             config.output_file = std::string(get_value(key));
         } else if (key == "--export-tree" || key == "--tree-out") {
             config.export_tree_file = std::string(get_value(key));
+        } else if (key == "--ref" || key == "--reference") {
+            config.ref_file = std::string(get_value(key));
+        } else if (key == "--aligned" || key == "--test-aligned") {
+            config.aligned_file = std::string(get_value(key));
+        } else if (key == "--score" || key == "--evaluate") {
+            config.score_only = true;
         } else if (key == "-t" || key == "--threads") {
             config.num_threads = parse_int(key, get_value(key), 1, 256);
         } else if (key == "--gap-open") {
@@ -111,11 +117,32 @@ CliConfig CliParser::parse(int argc, const char* const argv[], bool validate_fil
     }
 
     if (!config.show_help && !config.show_version) {
-        if (config.input_file.empty()) {
-            throw CliParseException("Missing required option: --input <FILE>");
-        }
-        if (validate_file_exists && !std::filesystem::exists(config.input_file)) {
-            throw CliParseException("Input file does not exist: " + config.input_file.string());
+        bool is_scoring_mode = config.score_only || (!config.ref_file.empty() && !config.aligned_file.empty());
+        if (is_scoring_mode) {
+            if (config.ref_file.empty()) {
+                throw CliParseException("Scoring mode requires reference file: --ref <FILE.msf>");
+            }
+            if (config.aligned_file.empty()) {
+                throw CliParseException("Scoring mode requires aligned test file: --aligned <FILE.fa>");
+            }
+            if (validate_file_exists) {
+                if (!std::filesystem::exists(config.ref_file)) {
+                    throw CliParseException("Reference file does not exist: " + config.ref_file.string());
+                }
+                if (!std::filesystem::exists(config.aligned_file)) {
+                    throw CliParseException("Aligned test file does not exist: " + config.aligned_file.string());
+                }
+            }
+        } else {
+            if (config.input_file.empty()) {
+                throw CliParseException("Missing required option: --input <FILE>");
+            }
+            if (validate_file_exists && !std::filesystem::exists(config.input_file)) {
+                throw CliParseException("Input file does not exist: " + config.input_file.string());
+            }
+            if (!config.ref_file.empty() && validate_file_exists && !std::filesystem::exists(config.ref_file)) {
+                throw CliParseException("Reference file does not exist: " + config.ref_file.string());
+            }
         }
     }
 
@@ -131,7 +158,8 @@ std::string CliParser::format_help() const {
     ss << program_name_ << " - Multiple Sequence Alignment (MSA) C++17 System\n";
     ss << description_ << "\n\n";
     ss << "USAGE:\n";
-    ss << "  " << program_name_ << " [OPTIONS] --input <FILE>\n\n";
+    ss << "  " << program_name_ << " [OPTIONS] --input <FILE>\n";
+    ss << "  " << program_name_ << " --score --ref <REF.msf> --aligned <TEST.fa>\n\n";
     ss << "OPTIONS:\n";
     ss << "  -i, --input <FILE>           Path to input FASTA file containing protein sequences (REQUIRED)\n";
     ss << "  -o, --output <FILE>          Path to output aligned FASTA file [default: stdout or <input>.aln.fa]\n";
@@ -141,13 +169,17 @@ std::string CliParser::format_help() const {
     ss << "      --gap-extend <NUM>       Affine gap extension penalty [default: -1]\n";
     ss << "      --benchmark              Enable performance benchmarking (wall-clock time, peak memory)\n";
     ss << "      --baseline-compare       Execute baseline Needleman-Wunsch alongside Hirschberg to verify score identity\n";
+    ss << "      --ref <FILE>             Reference MSF alignment file for BAliBASE SP/TC biological accuracy scoring\n";
+    ss << "      --aligned <FILE>         Test aligned FASTA file to evaluate against reference\n";
+    ss << "      --score                  Directly evaluate SP/TC scores between --ref and --aligned without alignment\n";
     ss << "  -v, --verbose                Enable verbose stage logging\n";
     ss << "  -h, --help                   Display this help message and exit\n";
     ss << "      --version                Display version information and exit\n\n";
     ss << "EXAMPLES:\n";
     ss << "  " << program_name_ << " --input sequences.fa --output aligned.fa\n";
     ss << "  " << program_name_ << " -i sequences.fa -o aligned.fa -t 4 --benchmark\n";
-    ss << "  " << program_name_ << " -i sequences.fa --gap-open -10 --gap-extend -1 --baseline-compare\n";
+    ss << "  " << program_name_ << " -i sequences.fa --ref reference.msf -o aligned.fa\n";
+    ss << "  " << program_name_ << " --score --ref data/balibase/BB11001.msf --aligned output/BB11001.aln.fa\n";
     return ss.str();
 }
 
